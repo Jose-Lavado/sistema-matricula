@@ -1,0 +1,41 @@
+.table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #999;
+}
+.table tbody tr:hover { background: #f7f9fd; }
+
+.estado-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  padding: 1rem .5rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: #fff;
+}
+.estado-option:hover { border-color: #bbb; background: #fafafa; }
+.estado-option.selected { border-color: #0a1628; background: rgba(10,22,40,.04); }
+.estado-option.selected-aprobada { border-color: #198754; background: rgba(25,135,84,.06); }
+.estado-option.selected-pendiente { border-color: #ffc107; background: rgba(255,193,7,.06); }
+.estado-option.selected-rechazada { border-color: #dc3545; background: rgba(220,53,69,.06); }
+
+.sec-opt {
+  flex: 0 0 auto;
+  min-width: 70px;
+  text-align: center;
+  padding: .6rem .8rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  font-weight: 500;
+}
+.sec-opt:hover { border-color: #bbb; background: #fafafa; }
+.sec-opt.selected { border-color: #0a1628; background: rgba(10,22,40,.06); }
+

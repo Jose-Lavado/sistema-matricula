@@ -1,0 +1,19 @@
+.sec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: .65rem;
+}
+
+.sec-btn {
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.sec-btn:hover { border-color: #adb5bd; }
+.sec-btn.selected {
+  border-color: #d4a017 !important;
+  background: rgba(212, 160, 23, .08) !important;
+}
+.sec-btn.lleno {
+  opacity: .4;
+  pointer-events: none;
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva Matr&iacute;cula &ndash; I.E. Pedro Labarthe</title>
+  <!-- MATRÍCULA APODERADO: formulario de matrícula para apoderado -->
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="/css/sidebar.css" rel="stylesheet" />
+  <link href="/css/app.css" rel="stylesheet" />
+  <link href="/css/feedback.css" rel="stylesheet" />
+  <link href="/css/matriculaApoderado.css" rel="stylesheet" />
+</head>
+
+<body>
+
+  <!-- GUARD -->
+  <script src="/js/guard.js"></script>
+
+  <div class="container-fluid">
+    <div class="row min-vh-100">
+
+      <!-- SIDEBAR -->
+      <div id="sidebar-container" class="col-auto p-0"></div>
+
+      <!-- MAIN -->
+      <main class="col p-0">
+
+        <!-- Topbar -->
+        <div class="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="playfair mb-0" style="color:#0a1628;">Nueva Matr&iacute;cula</h5>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light border text-secondary px-3 py-2">Periodo 2026</span>
+            <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-bell"></i></button>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-4">
+
+          <!-- ── 1. TIPO DE MATRÍCULA ── -->
+          <div class="card border rounded-3 mb-3 shadow-sm">
+            <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+              <i class="bi bi-ui-checks" style="color:#d4a017;"></i>
+              <span class="playfair fs-6 fw-bold">&iquest;Qu&eacute; tipo de matr&iacute;cula deseas realizar?</span>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="tipo-btn border rounded-3 p-4 text-center bg-white" id="btnNuevo" onclick="selTipo('nuevo')">
+                    <i class="bi bi-person-plus fs-2 d-block mb-2 tipo-icon text-secondary"></i>
+                    <h6 class="playfair fw-bold mb-1" style="color:#0a1628;">Alumno nuevo</h6>
+                    <p class="text-secondary mb-0" style="font-size:.8rem;">El alumno ingresa por primera vez a la
+                      instituci&oacute;n</p>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="tipo-btn border rounded-3 p-4 text-center bg-white" id="btnReinscrito" onclick="selTipo('reinscrito')">
+                    <i class="bi bi-arrow-repeat fs-2 d-block mb-2 tipo-icon text-secondary"></i>
+                    <h6 class="playfair fw-bold mb-1" style="color:#0a1628;">Reinscripci&oacute;n</h6>
+                    <p class="text-secondary mb-0" style="font-size:.8rem;">El alumno ya estudi&oacute; aqu&iacute; y se reinscribe
+                      para el 2026</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 2a. BLOQUE ALUMNO NUEVO ── -->
+          <div id="bloqueNuevo" class="hidden">
+            <div class="card border rounded-3 mb-3 shadow-sm">
+              <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+                <i class="bi bi-person" style="color:#d4a017;"></i>
+                <span class="playfair fs-6 fw-bold">Datos del alumno</span>
+                <small class="ms-auto text-white-50">Alumno nuevo</small>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">Nombre(s) <span class="text-danger">*</span></label>
+                    <input type="text" id="n_nombre" class="form-control solo-letras" placeholder="Ej: Luis Andr&eacute;s" oninput="actualizarResumen();actualizarProgreso()" />
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">Apellido(s) <span class="text-danger">*</span></label>
+                    <input type="text" id="n_apellido" class="form-control solo-letras" placeholder="Ej: Garc&iacute;a Paz" oninput="actualizarResumen();actualizarProgreso()" />
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">DNI <span class="text-danger">*</span></label>
+                    <input type="text" id="n_dni" class="form-control" maxlength="8" placeholder="8 d&iacute;gitos" oninput="this.value=this.value.replace(/\D/g,'');actualizarProgreso()" />
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">Fecha de nacimiento <span class="text-danger">*</span></label>
+                    <input type="date" id="n_fnac" class="form-control" oninput="actualizarProgreso()" />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">G&eacute;nero <span class="text-danger">*</span></label>
+                    <div class="d-flex gap-3">
+                      <div class="sex-opt">
+                        <input type="radio" name="n_sexo" id="n_M" value="M" />
+                        <label for="n_M" class="border rounded-3 px-4 py-2 text-secondary d-flex align-items-center gap-1" style="cursor:pointer;font-size:.88rem;transition:.2s;">
+                          <i class="bi bi-gender-male"></i> Masculino
+                        </label>
+                      </div>
+                      <div class="sex-opt">
+                        <input type="radio" name="n_sexo" id="n_F" value="F" />
+                        <label for="n_F" class="border rounded-3 px-4 py-2 text-secondary d-flex align-items-center gap-1" style="cursor:pointer;font-size:.88rem;transition:.2s;">
+                          <i class="bi bi-gender-female"></i> Femenino
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 2b. BLOQUE REINSCRITO ── -->
+          <div id="bloqueReinscrito" class="hidden">
+            <div class="card border rounded-3 mb-3 shadow-sm">
+              <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+                <i class="bi bi-search" style="color:#d4a017;"></i>
+                <span class="playfair fs-6 fw-bold">Buscar alumno por DNI</span>
+                <small class="ms-auto text-white-50">Reinscripci&oacute;n</small>
+              </div>
+              <div class="card-body">
+                <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">DNI del alumno <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="text" id="r_dni" class="form-control" maxlength="8" placeholder="Ingresa los 8 d&iacute;gitos" oninput="this.value=this.value.replace(/\D/g,'')" />
+                  <button class="btn btn-dark px-3" type="button" onclick="buscarAlumno()" style="background:#0a1628;border-color:#0a1628;">
+                    <i class="bi bi-search me-1"></i>Buscar
+                  </button>
+                </div>
+
+                <!-- Encontrado -->
+                <div id="alumnoFound" class="hidden mt-3 d-flex align-items-center gap-3 rounded-3 p-3" style="background:#f0f7f0;border:1.5px solid rgba(39,174,96,.3);">
+                  <div id="afAvatar" class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0" style="width:42px;height:42px;background:#1b3a6b;font-size:.9rem;">LT</div>
+                  <div>
+                    <div id="afNombre" class="fw-semibold" style="font-size:.92rem;color:#0a1628;"></div>
+                    <small id="afDetalle" class="text-muted"></small>
+                  </div>
+                  <i class="bi bi-check-circle-fill ms-auto" style="font-size:1.4rem;color:#27ae60;"></i>
+                </div>
+
+                <!-- Error -->
+                <div id="alumnoError" class="hidden mt-3 d-flex align-items-center gap-2 rounded-3 p-3" style="background:#fff3f3;border:1.5px solid rgba(231,76,60,.25);color:#c0392b;font-size:.85rem;">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span id="errorMsg"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 3. DATOS DEL APODERADO (auto-cargado) ── -->
+          <div id="bloquePadre" class="hidden">
+            <div class="card border rounded-3 mb-3 shadow-sm">
+              <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+                <i class="bi bi-person-badge" style="color:#d4a017;"></i>
+                <span class="playfair fs-6 fw-bold">Datos del apoderado</span>
+                <small class="ms-auto text-white-50">Cargado autom&aacute;ticamente</small>
+              </div>
+              <div class="card-body">
+                <div id="apoderadoContainer" class="p-3 rounded-3 bg-light border">
+                  <p class="text-muted small mb-0">Cargando datos del apoderado...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 4. DATOS DE MATRÍCULA ── -->
+          <div id="bloqueMatricula" class="hidden">
+            <div class="card border rounded-3 mb-3 shadow-sm">
+              <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+                <i class="bi bi-journal-text" style="color:#d4a017;"></i>
+                <span class="playfair fs-6 fw-bold">Datos de la matr&iacute;cula</span>
+              </div>
+              <div class="card-body">
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">A&ntilde;o acad&eacute;mico</label>
+                    <input type="text" class="form-control bg-light" value="2026" readonly />
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-medium" style="font-size:.84rem;color:#1b3a6b;">Grado <span class="text-danger">*</span></label>
+                    <select class="form-select" id="m_grado" onchange="actualizarResumen();actualizarProgreso()">
+                      <option value="" disabled selected>Selecciona...</option>
+                      <option>1&deg; Secundaria</option>
+                      <option>2&deg; Secundaria</option>
+                      <option>3&deg; Secundaria</option>
+                      <option>4&deg; Secundaria</option>
+                      <option>5&deg; Secundaria</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="seccionContainer" class="mt-2">
+                  <p class="text-muted small mb-0">La secci&oacute;n se asignar&aacute; autom&aacute;ticamente al enviar la solicitud.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── 5. RESUMEN ── -->
+            <div class="card border rounded-3 mb-3 shadow-sm">
+              <div class="card-header d-flex align-items-center gap-2 text-white py-3" style="background:#0a1628;">
+                <i class="bi bi-clipboard-check" style="color:#d4a017;"></i>
+                <span class="playfair fs-6 fw-bold">Resumen de la matr&iacute;cula</span>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-borderless mb-0" style="font-size:.9rem;">
+                  <tbody>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2" style="width:45%">Tipo</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-tipo">&mdash;</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">Alumno</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-alumno">&mdash;</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">Apoderado</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-apoderado">&mdash;</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">DNI apoderado</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-dni-apoderado">&mdash;</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">Parentesco</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-parentesco">&mdash;</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">A&ntilde;o acad&eacute;mico</td>
+                      <td class="fw-medium py-2 pe-4 text-end">2026</td>
+                    </tr>
+                    <tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">Grado</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-grado">&mdash;</td>
+                    </tr>
+                    <!--tr class="border-bottom">
+                      <td class="text-muted ps-4 py-2">Secci&oacute;n</td>
+                      <td class="fw-medium py-2 pe-4 text-end" id="res-sec">&mdash;</td>
+                    </tr-->
+                    <tr>
+                      <td class="text-muted ps-4 py-2">Estado inicial</td>
+                      <td class="py-2 pe-4 text-end">
+                        <span class="badge rounded-pill fw-medium px-3 py-1" style="background:rgba(230,126,34,.12);color:#c0671b;font-size:.78rem;">Pendiente</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Progreso -->
+            <div id="progressSection" class="hidden progress-section mb-3">
+              <span class="progress-label" id="progressLabel">Progreso del formulario</span>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+              </div>
+              <span class="progress-caption" id="progressCaption">0 de 0 campos completados</span>
+            </div>
+
+            <!-- Acciones -->
+            <div class="d-flex gap-3 flex-wrap">
+              <button class="btn fw-medium px-4 py-2" style="background:#0a1628;color:#fff;border-radius:10px;" onclick="confirmarMatricula()">
+                <i class="bi bi-send me-2"></i>Confirmar matr&iacute;cula
+              </button>
+              <a href="/pages/dashboardApoderado.html" class="btn btn-outline-secondary px-4 py-2" style="border-radius:10px;">
+                Cancelar
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/matriculaApoderado.js"></script>
+  <script src="/js/notification.js"></script>
+  <script src="/js/feedback.js"></script>
+</body>
+</html>

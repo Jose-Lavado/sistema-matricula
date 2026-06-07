@@ -1,0 +1,8 @@
+.btn-eye {
+  background: transparent;
+  border: none;
+  color: #aaa;
+}
+.btn-eye:hover {
+  color: #555;
+}
