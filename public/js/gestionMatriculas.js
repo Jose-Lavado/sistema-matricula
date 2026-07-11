@@ -58,7 +58,7 @@ function cargarMatriculas() {
       html += '<td><div class="d-flex justify-content-center gap-1">';
       html += '<button class="btn btn-sm btn-outline-secondary" title="Ver" onclick="verDetalle(' + m.id + ')"><i class="bi bi-eye"></i></button>';
       html += '<button class="btn btn-sm btn-outline-primary" title="Editar sección/grado" onclick="abrirModalSeccion(' + m.id + ')"><i class="bi bi-pencil-square"></i></button>';
-      html += '<button class="btn btn-sm btn-outline-warning p-0" style="width:30px;height:30px" title="Toggle estado" onclick="abrirModalEstado(' + m.id + ",'" + m.estado + "'" + ')"><i class="bi bi-toggle-on"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-warning p-0" style="width:30px;height:30px" title="Cambiar estado" onclick="abrirModalEstado(' + m.id + ",'" + m.estado + "'" + ')"><i class="bi bi-toggle-on"></i></button>';
       html += '<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminar(' + m.id + ')"><i class="bi bi-trash"></i></button>';
       html += "</div></td>";
       html += "</tr>";
