@@ -158,7 +158,7 @@ async function buscarAlumno() {
   const iniciales = (data.nombre + " " + (data.apellido || "")).split(" ").map(w => w[0]).slice(0, 2).join("");
   document.getElementById("afAvatar").textContent = iniciales;
   document.getElementById("afNombre").textContent = data.nombre + " " + (data.apellido || "");
-  document.getElementById("afDetalle").textContent = "DNI: " + dni + " · Nac: " + (data.fecha_nacimiento || "—") + " · " + (data.genero === "M" ? "Masculino" : "Femenino");
+  document.getElementById("afDetalle").textContent = "DNI: " + dni + " · Nac: " + (data.fechaNacimiento ? new Date(data.fechaNacimiento).toISOString().split("T")[0] : "—");
   document.getElementById("alumnoFound").classList.remove("hidden");
 
   document.getElementById("res-tipo").textContent = "Reinscripción";

@@ -167,7 +167,7 @@ async function buscarAlumno() {
   var ini = nombreCompleto.split(' ').map(function (w) { return w[0]; }).slice(0, 2).join('');
   document.getElementById('aAvatar').textContent = ini;
   document.getElementById('aNombre').textContent = nombreCompleto;
-  document.getElementById('aDetalle').textContent = 'DNI: ' + dni + ' · Nac: ' + (data.fecha_nacimiento || data.nac || '') + ' · ' + (data.sexo === 'M' ? 'Masculino' : (data.sexo === 'F' ? 'Femenino' : data.sexo || ''));
+  document.getElementById('aDetalle').textContent = 'DNI: ' + dni + ' · Nac: ' + (data.fechaNacimiento ? new Date(data.fechaNacimiento).toISOString().split("T")[0] : '');
   document.getElementById('alumnoFound').classList.remove('hidden');
   document.getElementById('res-alumno').textContent = nombreCompleto;
   alumnoOk = true;

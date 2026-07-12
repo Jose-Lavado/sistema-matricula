@@ -26,9 +26,11 @@ function getQueryString() {
   const params = new URLSearchParams();
   const search = document.getElementById("filterSearch").value.trim();
   const grado = document.getElementById("filterGrado").value;
+  const seccion = document.getElementById("filterSeccion").value;
   const estado = document.getElementById("filterEstado").value;
   if (search) params.append("search", search);
   if (grado) params.append("grado", grado);
+  if (seccion) params.append("seccion", seccion);
   if (estado) params.append("estado", estado);
   params.append("page", currentPage);
   params.append("order", "asc");
@@ -99,6 +101,7 @@ function irPagina(p) {
 function limpiarFiltros() {
   document.getElementById("filterSearch").value = "";
   document.getElementById("filterGrado").value = "";
+  document.getElementById("filterSeccion").value = "";
   document.getElementById("filterEstado").value = "";
   currentPage = 1;
   cargarMatriculas();
@@ -109,6 +112,10 @@ document.getElementById("filterSearch").addEventListener("input", function () {
   cargarMatriculas();
 });
 document.getElementById("filterGrado").addEventListener("change", function () {
+  currentPage = 1;
+  cargarMatriculas();
+});
+document.getElementById("filterSeccion").addEventListener("change", function () {
   currentPage = 1;
   cargarMatriculas();
 });

@@ -8,11 +8,11 @@ const { registrarMatricula, registrarUsoClase } = require("../metrics/prometheus
 const matriculaController = {
   listar: async (req, res) => {
     try {
-      const { grado, estado, search, fecha, alumno_id, anio, page, order } = req.query;
+      const { grado, seccion, estado, search, fecha, alumno_id, anio, page, order } = req.query;
       const pageNum = Math.max(1, parseInt(page) || 1);
       const limit = 10;
       const offset = (pageNum - 1) * limit;
-      const result = await Matricula.findAll({ grado, estado, search, fecha, alumno_id, anio, limit, offset, order });
+      const result = await Matricula.findAll({ grado, seccion, estado, search, fecha, alumno_id, anio, limit, offset, order });
       return res.json({ data: result.data, pagination: { totalPages: result.totalPages } });
     } catch (err) {
       logger.error(err);

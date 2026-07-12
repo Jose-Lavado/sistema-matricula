@@ -215,6 +215,7 @@ class Matricula {
     const params = [];
 
     if (filtros.grado) { where.push("s.grado = ?"); params.push(filtros.grado); }
+    if (filtros.seccion) { where.push("s.seccion = ?"); params.push(filtros.seccion); }
     if (filtros.estado) { where.push("m.estado = ?"); params.push(filtros.estado); }
     if (filtros.search) { where.push("(CONCAT(al.nombre, ' ', al.apellido) LIKE ? OR al.dni LIKE ? OR CONCAT(u.nombre, ' ', u.apellido) LIKE ? OR ap.dni LIKE ?)"); params.push(`%${filtros.search}%`, `%${filtros.search}%`, `%${filtros.search}%`, `%${filtros.search}%`); }
     if (filtros.fecha) { where.push("DATE(m.fechaRegistro) = ?"); params.push(filtros.fecha); }
