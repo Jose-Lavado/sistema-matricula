@@ -2,3 +2,7 @@ node_modules/
 .env
 logs/
 reportes/
+server_out.txt
+server_err.txt
+grafana/
+prometheus.yml
