@@ -20,10 +20,15 @@ const ESTADOS = { APROBADA: "bg-success", PENDIENTE: "bg-warning text-dark", REC
 // ==================== REPORTE 1: Por Periodo ====================
 async function cargarR1() {
   const periodo = new Date().getFullYear();
+  const grado = document.getElementById("r1FilterGrado")?.value || "";
+  const seccion = document.getElementById("r1FilterSeccion")?.value || "";
   try {
+    const params = new URLSearchParams({ periodo });
+    if (grado) params.append("grado", grado);
+    if (seccion) params.append("seccion", seccion);
     const [stats, data] = await Promise.all([
-      apiFetch("/reportes/stats?periodo=" + periodo),
-      apiFetch("/reportes/matriculas?periodo=" + periodo)
+      apiFetch("/reportes/stats?" + params.toString()),
+      apiFetch("/reportes/matriculas?" + params.toString())
     ]);
     if (stats) {
       document.getElementById("r1KpiTotal").textContent = stats.total_matriculas || 0;
@@ -257,83 +262,124 @@ async function exportarPDF() {
   const azul = [10, 22, 40];
   const gris = [245, 247, 251];
 
+  // ==================== HEADER SIMÉTRICO: 3 bloques en fila ====================
+  // Bloque izquierdo: Logo arriba + texto debajo
   try {
     const logo = new Image();
     logo.src = "/images/logo.png";
-    await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; });
-    doc.addImage(logo, "PNG", 14, 10, 20, 20);
+    await new Promise(function (r) { logo.onload = r; logo.onerror = r; });
+    doc.addImage(logo, "PNG", 22, 8, 18, 18);
   } catch (e) {}
 
   doc.setTextColor(...azul);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text("I.E. PEDRO LABARTHE", 37, 14);
+  doc.text("I.E. PEDRO LABARTHE", 31, 28, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(80);
-  doc.text("Institucion Educativa Pedro Labarthe", 37, 18);
-  doc.text("Sistema de Gestion de Matriculas", 37, 22);
+  doc.setFontSize(6.5);
+  doc.setTextColor(100);
+  doc.text("Institucion Educativa Pedro Labarthe", 31, 32, { align: "center" });
+  doc.text("Sistema de Gestion de Matriculas", 31, 36, { align: "center" });
 
-  doc.setTextColor(...azul);
+  // Bloque centro: Título
+  doc.setTextColor(40);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text("Reporte de Matriculas", 105, 17, { align: "center" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.setTextColor(60);
-  doc.text("Periodo Academico 2026", 105, 24, { align: "center" });
+  doc.setFontSize(18);
+  doc.text("Reporte de Matriculas", 105, 16, { align: "center" });
+  doc.setFontSize(10);
+  doc.setTextColor(...azul);
+  doc.text("Periodo Academico 2026", 105, 25, { align: "center" });
 
+  // Bloque derecho: Caja metadatos
+  const raw = sessionStorage.getItem("user") || localStorage.getItem("user");
+  const user = raw ? JSON.parse(raw) : {};
+  const fechaHoy = new Date();
+  const fechaStr = String(fechaHoy.getDate()).padStart(2, "0") + "/" + String(fechaHoy.getMonth() + 1).padStart(2, "0") + "/" + fechaHoy.getFullYear();
+
+  const bx = 153, by = 10, bw = 43, bh = 20;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(bx, by, bw, bh, 2, 2, "S");
+  doc.setFontSize(6);
+  const meta = [
+    ["Fecha: ", fechaStr],
+    ["Generado por: ", user.name || "Admin"],
+    ["Cargo: ", user.role || "Administrador"],
+    ["Periodo: ", "2026"]
+  ];
+  let my = by + 4.5;
+  meta.forEach(function (m) {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(60);
+    doc.text(m[0], bx + 3, my);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(m[1], bx + 22, my);
+    my += 3.8;
+  });
+
+  // ==================== LÍNEA SEPARADORA ====================
   doc.setDrawColor(180);
   doc.setLineWidth(0.4);
-  doc.line(14, 35, 196, 35);
+  doc.line(14, 40, 196, 40);
 
+  // ==================== SECCIÓN 1: RESUMEN GENERAL ====================
   doc.setTextColor(...azul);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("1. RESUMEN GENERAL", 14, 43);
+  doc.text("1. RESUMEN GENERAL", 14, 47);
 
   showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
   const stats = await apiFetch("/reportes/stats") || {};
-  const resumen = [
-    { titulo: "TOTAL", valor: String(stats.total_matriculas || 0) },
-    { titulo: "APROBADAS", valor: String(stats.aprobadas || 0) },
-    { titulo: "PENDIENTES", valor: String(stats.pendientes || 0) },
-    { titulo: "RECHAZADAS", valor: String(stats.rechazadas || 0) },
-  ];
 
-  const colW = 45.5;
-  let rx = 14;
-  const ry = 47;
-  resumen.forEach((card) => {
-    doc.setFillColor(10, 22, 40);
-    doc.rect(rx, ry, colW, 9, "F");
-    doc.setTextColor(255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.text(card.titulo, rx + colW / 2, ry + 5.8, { align: "center" });
-    doc.setFillColor(184, 198, 224);
-    doc.rect(rx, ry + 9, colW, 12, "F");
-    doc.setTextColor(40);
-    doc.setFontSize(16);
-    doc.text(card.valor, rx + colW / 2, ry + 17, { align: "center" });
-    rx += colW;
+  // Tabla de 4 columnas con fondos pastel
+  var tblX = 14, tblW = 182, cellW = tblW / 4;
+  var hdrY = 51, hdrH = 8, dataH = 10;
+
+  // Header azul marino
+  doc.setFillColor(...azul);
+  doc.rect(tblX, hdrY, tblW, hdrH, "F");
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  ["TOTAL MATRICULAS", "APROBADAS", "PENDIENTES", "RECHAZADAS"].forEach(function (label, i) {
+    doc.text(label, tblX + cellW * i + cellW / 2, hdrY + 5.5, { align: "center" });
   });
 
+  // Fila de datos con fondos pastel
+  var pastelBg = [[255, 255, 255], [209, 231, 221], [255, 243, 205], [248, 215, 218]];
+  var valores = [String(stats.total_matriculas || 0), String(stats.aprobadas || 0), String(stats.pendientes || 0), String(stats.rechazadas || 0)];
+  var dataY = hdrY + hdrH;
+
+  valores.forEach(function (val, i) {
+    doc.setFillColor(...pastelBg[i]);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "F");
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.2);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "S");
+    doc.setTextColor(40);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(val, tblX + cellW * i + cellW / 2, dataY + 7, { align: "center" });
+  });
+
+  // ==================== SECCIÓN 2: DETALLE DE MATRÍCULAS ====================
+  var sec2Y = dataY + dataH + 8;
   doc.setTextColor(...azul);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("2. DETALLE DE MATRICULAS", 14, 76);
+  doc.text("2. DETALLE DE MATRICULAS", 14, sec2Y);
 
   const filas = [];
-  document.querySelectorAll("#tablaR1 tbody tr").forEach((tr) => {
+  document.querySelectorAll("#tablaR1 tbody tr").forEach(function (tr) {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 7) {
-      filas.push(Array.from(tds).map(td => td.innerText.trim()));
+      filas.push(Array.from(tds).map(function (td) { return td.innerText.trim(); }));
     }
   });
 
   doc.autoTable({
-    startY: 80,
+    startY: sec2Y + 4,
     head: [["N\u00b0", "Alumno", "DNI", "Grado", "Seccion", "Estado", "Fecha"]],
     body: filas,
     theme: "grid",
@@ -342,15 +388,17 @@ async function exportarPDF() {
     alternateRowStyles: { fillColor: gris },
   });
 
-  const paginas = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= paginas; i++) {
+  // ==================== PIE DE PÁGINA ====================
+  var paginas = doc.internal.getNumberOfPages();
+  for (var i = 1; i <= paginas; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text("Pagina " + i + " de " + paginas, 105, 290, { align: "center" });
   }
+
   doc.save("Reporte_Matriculas_2026.pdf");
-  document.querySelectorAll(".notif-stack .notif").forEach(function(d) {
+  document.querySelectorAll(".notif-stack .notif").forEach(function (d) {
     if (typeof removeNotification === "function") removeNotification(d);
     else d.remove();
   });
@@ -417,6 +465,12 @@ function exportarExcel() {
 
 // ==================== CARGAR TODO ====================
 cargarR1();
+
+function limpiarFiltrosR1() {
+  document.getElementById("r1FilterGrado").value = "";
+  document.getElementById("r1FilterSeccion").value = "";
+  cargarR1();
+}
 
 // Lazy load por tab
 document.querySelectorAll('#reportesTab button[data-bs-toggle="tab"]').forEach(tab => {

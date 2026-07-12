@@ -15,9 +15,9 @@ const path = require("path");
 const reporteController = {
   matriculas: async (req, res) => {
     try {
-      const { periodo } = req.query;
+      const { periodo, grado, seccion } = req.query;
       const admin = new Admin();
-      const data = await admin.generarReporte("matriculas", periodo || new Date().getFullYear());
+      const data = await admin.generarReporte("matriculas", periodo || new Date().getFullYear(), grado, seccion);
       return res.json(data);
     } catch (err) {
       logger.error(err);
@@ -70,8 +70,8 @@ const reporteController = {
 
   stats: async (req, res) => {
     try {
-      const { periodo } = req.query;
-      const stats = await Matricula.getStats(periodo);
+      const { periodo, grado, seccion } = req.query;
+      const stats = await Matricula.getStats(periodo, grado, seccion);
       return res.json(stats);
     } catch (err) {
       logger.error(err);

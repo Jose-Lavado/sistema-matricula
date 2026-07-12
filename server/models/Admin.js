@@ -124,8 +124,18 @@ class Admin extends Usuario {
   }
 
   // Generar reporte de matrículas por periodo
-  async generarReporte(tipo, periodo) {
+  async generarReporte(tipo, periodo, grado, seccion) {
     if (tipo === "matriculas") {
+      const where = ["m.periodoAcademico = ?", "m.fechaEliminacion IS NULL"];
+      const params = [periodo];
+      if (grado) {
+        where.push("s.grado = ?");
+        params.push(grado);
+      }
+      if (seccion) {
+        where.push("s.seccion = ?");
+        params.push(seccion);
+      }
       const [rows] = await pool.query(`
         SELECT m.idMatricula,
                CONCAT(al.nombre, ' ', al.apellido) AS alumno,
@@ -138,9 +148,9 @@ class Admin extends Usuario {
         JOIN Apoderado ap ON al.idApoderado = ap.idApoderado
         JOIN Usuario u ON ap.idUsuario = u.idUsuario
         JOIN Seccion s ON m.idSeccion = s.idSeccion
-        WHERE m.periodoAcademico = ? AND m.fechaEliminacion IS NULL
+        WHERE ${where.join(" AND ")}
         ORDER BY m.fechaRegistro DESC
-      `, [periodo]);
+      `, params);
       return rows;
     }
     return [];

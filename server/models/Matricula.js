@@ -239,17 +239,43 @@ class Matricula {
     return { data: rows, totalPages };
   }
 
-  static async getStats(periodo) {
+  static async getStats(periodo, grado, seccion) {
     const anio = periodo || new Date().getFullYear();
-    const [rows] = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM Matricula WHERE estado IN ('APROBADA','PENDIENTE','RECHAZADA') AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS total_matriculas,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'APROBADA' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS aprobadas,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'PENDIENTE' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS pendientes,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'RECHAZADA' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS rechazadas,
-        (SELECT COUNT(DISTINCT idAlumno) FROM Matricula WHERE periodoAcademico = ? AND fechaEliminacion IS NULL) AS total_alumnos
-    `, [anio, anio, anio, anio, anio]);
-    return rows[0];
+    const GRADOS_VALIDOS = ["1° Secundaria","2° Secundaria","3° Secundaria","4° Secundaria","5° Secundaria"];
+    const SECCIONES_VALIDAS = ["A","B","C","D"];
+    const gradoFiltro = GRADOS_VALIDOS.includes(grado) ? grado : null;
+    const seccionFiltro = SECCIONES_VALIDAS.includes(seccion) ? seccion : null;
+    const needJoin = gradoFiltro || seccionFiltro;
+
+    const extraJoin = needJoin ? " JOIN Seccion s ON m.idSeccion = s.idSeccion" : "";
+    const extraWhere = [];
+    const extraParams = [];
+    if (gradoFiltro) { extraWhere.push(" AND s.grado = ?"); extraParams.push(gradoFiltro); }
+    if (seccionFiltro) { extraWhere.push(" AND s.seccion = ?"); extraParams.push(seccionFiltro); }
+    const extraWhereStr = extraWhere.join("");
+    const baseParams = [anio, ...extraParams];
+
+    const buildQuery = (estadoFilter) => {
+      return `SELECT COUNT(*) AS total FROM Matricula m${extraJoin} WHERE m.estado ${estadoFilter} AND m.periodoAcademico = ? AND m.fechaEliminacion IS NULL${extraWhereStr}`;
+    };
+
+    const [[totalRow]] = await pool.query(buildQuery("IN ('APROBADA','PENDIENTE','RECHAZADA')"), baseParams);
+    const [[aprobadasRow]] = await pool.query(buildQuery("= 'APROBADA'"), baseParams);
+    const [[pendientesRow]] = await pool.query(buildQuery("= 'PENDIENTE'"), baseParams);
+    const [[rechazadasRow]] = await pool.query(buildQuery("= 'RECHAZADA'"), baseParams);
+
+    const [[alumnosRow]] = await pool.query(
+      `SELECT COUNT(DISTINCT m.idAlumno) AS total FROM Matricula m${extraJoin} WHERE m.periodoAcademico = ? AND m.fechaEliminacion IS NULL${extraWhereStr}`,
+      baseParams
+    );
+
+    return {
+      total_matriculas: totalRow.total,
+      aprobadas: aprobadasRow.total,
+      pendientes: pendientesRow.total,
+      rechazadas: rechazadasRow.total,
+      total_alumnos: alumnosRow.total,
+    };
   }
 
   static async getEliminadas(periodo) {
@@ -275,9 +301,9 @@ class Matricula {
       SELECT u.idUsuario,
              CONCAT(u.nombre, ' ', u.apellido) AS admin,
              COUNT(DISTINCT hc.idMatricula) AS total,
-             SUM(CASE WHEN m.estado = 'APROBADA' THEN 1 ELSE 0 END) AS aprobadas,
-             SUM(CASE WHEN m.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS pendientes,
-             SUM(CASE WHEN m.estado = 'RECHAZADA' THEN 1 ELSE 0 END) AS rechazadas
+             COUNT(DISTINCT CASE WHEN m.estado = 'APROBADA' THEN hc.idMatricula END) AS aprobadas,
+             COUNT(DISTINCT CASE WHEN m.estado = 'PENDIENTE' THEN hc.idMatricula END) AS pendientes,
+             COUNT(DISTINCT CASE WHEN m.estado = 'RECHAZADA' THEN hc.idMatricula END) AS rechazadas
       FROM Usuario u
       LEFT JOIN Historial_Cambios hc ON hc.idUsuario = u.idUsuario
       LEFT JOIN Matricula m ON m.idMatricula = hc.idMatricula
@@ -292,17 +318,25 @@ class Matricula {
 
   static async getCumplimiento(periodo) {
     const [rows] = await pool.query(`
-      SELECT s.grado,
-             COUNT(m.idMatricula) AS realizadas,
-             SUM(s.capacidad) AS capacidad,
-             ROUND(COUNT(m.idMatricula) / SUM(s.capacidad) * 100, 1) AS porcentaje
-      FROM Seccion s
-      LEFT JOIN Matricula m ON s.idSeccion = m.idSeccion
-        AND m.estado = 'APROBADA'
-        AND m.fechaEliminacion IS NULL
-        AND m.periodoAcademico = ?
-      GROUP BY s.grado
-      ORDER BY s.grado
+      SELECT c.grado,
+             COALESCE(m.realizadas, 0) AS realizadas,
+             c.capacidad,
+             ROUND(COALESCE(m.realizadas, 0) / c.capacidad * 100, 1) AS porcentaje
+      FROM (
+        SELECT grado, SUM(capacidad) AS capacidad
+        FROM Seccion
+        GROUP BY grado
+      ) c
+      LEFT JOIN (
+        SELECT s.grado, COUNT(*) AS realizadas
+        FROM Matricula m
+        JOIN Seccion s ON m.idSeccion = s.idSeccion
+        WHERE m.estado = 'APROBADA'
+          AND m.fechaEliminacion IS NULL
+          AND m.periodoAcademico = ?
+        GROUP BY s.grado
+      ) m ON c.grado = m.grado
+      ORDER BY c.grado
     `, [periodo]);
     return rows;
   }

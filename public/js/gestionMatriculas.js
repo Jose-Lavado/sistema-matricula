@@ -60,6 +60,7 @@ function cargarMatriculas() {
       html += '<button class="btn btn-sm btn-outline-primary" title="Editar sección/grado" onclick="abrirModalSeccion(' + m.id + ')"><i class="bi bi-pencil-square"></i></button>';
       html += '<button class="btn btn-sm btn-outline-warning p-0" style="width:30px;height:30px" title="Toggle estado" onclick="abrirModalEstado(' + m.id + ",'" + m.estado + "'" + ')"><i class="bi bi-toggle-on"></i></button>';
       html += '<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminar(' + m.id + ')"><i class="bi bi-trash"></i></button>';
+      html += '<button class="btn btn-sm" style="color:#6f42c1;border-color:#6f42c1;background:rgba(111,66,193,0.06)" title="Historial" onclick="verHistorial(' + m.id + ', \'' + (m.alumno || '').replace(/'/g, "\\'") + '\', \'' + (m.grado || '') + '\')"><i class="bi bi-clock-history"></i></button>';
       html += "</div></td>";
       html += "</tr>";
     });
@@ -148,6 +149,7 @@ function seleccionarEstado(el) {
 
 function abrirModalEstado(id, estadoActual) {
   estadoEditId = id;
+  document.getElementById("estadoDescripcion").value = "";
   document.querySelectorAll(".estado-option").forEach(o => {
     o.classList.remove("selected", "selected-aprobada", "selected-pendiente", "selected-rechazada");
     if (o.dataset.value === estadoActual) {
@@ -162,9 +164,10 @@ function abrirModalEstado(id, estadoActual) {
 function guardarCambioEstado() {
   const nuevoEstado = document.getElementById("estadoSelected").value;
   if (!nuevoEstado) { showErrorAlert("Selecciona un estado."); return; }
+  const descripcion = document.getElementById("estadoDescripcion").value.trim();
   apiFetch("/matriculas/" + estadoEditId + "/estado", {
     method: "PUT",
-    body: JSON.stringify({ estado: nuevoEstado })
+    body: JSON.stringify({ estado: nuevoEstado, descripcion: descripcion || "Cambio a " + nuevoEstado })
   }).then(() => {
     bootstrap.Modal.getInstance(document.getElementById("estadoModal")).hide();
     showSuccessAlert("Estado de matrícula actualizado.");
@@ -245,17 +248,46 @@ function anularMatricula() {
 
 function confirmarEliminar(id) {
   deleteId = id;
-  document.getElementById("confirmMsg").textContent = "¿Está seguro de eliminar esta matrícula? (registro logico, aparecera en Reporte 4)";
+  document.getElementById("confirmMsg").textContent = "¿Está seguro de eliminar esta matrícula?";
   document.getElementById("confirmBtn").onclick = async function () {
     const res = await apiFetch("/matriculas/" + deleteId, { method: "DELETE" });
     if (res && !res.error) {
-      showSuccessAlert("Matrícula eliminada (registro logico). Aparecera en Reporte 4.");
+      showSuccessAlert("Matrícula eliminada correctamente.");
+      bootstrap.Modal.getInstance(document.getElementById("confirmModal")).hide();
       cargarMatriculas();
     } else {
       showErrorAlert(res?.error || "Error al eliminar");
     }
   };
   new bootstrap.Modal(document.getElementById("confirmModal")).show();
+}
+
+async function verHistorial(idMatricula, alumnoNombre, grado) {
+  document.getElementById("histAlumno").textContent = alumnoNombre;
+  document.getElementById("histGrado").textContent = grado;
+  document.getElementById("histMatId").textContent = "#" + String(idMatricula).padStart(3, "0");
+  document.getElementById("historialTimeline").innerHTML = '<div class="text-center text-muted py-4">Cargando...</div>';
+  new bootstrap.Modal(document.getElementById("historialModal")).show();
+  try {
+    const data = await apiFetch("/historial/matricula/" + idMatricula);
+    const container = document.getElementById("historialTimeline");
+    if (data && data.length) {
+      container.innerHTML = data.map(h => {
+        const cls = (h.estadoNuevo || "").toLowerCase();
+        const fecha = h.fechaCambio ? new Date(h.fechaCambio).toLocaleString("es-PE") : "-";
+        return `<div class="timeline-item ${cls}">
+          <div class="tl-fecha">${fecha}</div>
+          <div><span class="tl-badge ${cls}">${h.estadoNuevo}</span></div>
+          ${h.descripcion ? '<div class="tl-desc">' + h.descripcion + '</div>' : ''}
+          <div class="tl-usuario"><i class="bi bi-person-fill me-1"></i>${h.usuario || "-"}</div>
+        </div>`;
+      }).join("");
+    } else {
+      container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-clock-history fs-1 d-block mb-2"></i>Sin historial de cambios</div>';
+    }
+  } catch (e) {
+    document.getElementById("historialTimeline").innerHTML = '<div class="text-center text-danger py-4">Error al cargar historial</div>';
+  }
 }
 
 cargarMatriculas();

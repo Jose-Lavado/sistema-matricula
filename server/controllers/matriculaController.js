@@ -73,12 +73,12 @@ const matriculaController = {
 
   cambiarEstado: async (req, res) => {
     try {
-      const { estado } = req.body;
+      const { estado, descripcion } = req.body;
       const data = await Matricula.consultar(req.params.id);
       if (!data) return res.status(404).json({ message: "Matrícula no encontrada." });
 
       const mat = new Matricula(data);
-      await mat.cambiarEstado(estado, req.user.id, `Cambio a ${estado}`);
+      await mat.cambiarEstado(estado, req.user.id, descripcion || `Cambio a ${estado}`);
       registrarMatricula(estado.toLowerCase(), "exitoso");
       registrarUsoClase("Matricula", "cambiarEstado");
       return res.json({ message: "Estado actualizado.", estado });

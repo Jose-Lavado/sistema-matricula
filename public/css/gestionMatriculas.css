@@ -6,6 +6,9 @@
 }
 .table tbody tr:hover { background: #f7f9fd; }
 
+/* Actions column */
+.table td:last-child .d-flex { flex-wrap: wrap; justify-content: center; gap: 3px; }
+
 .estado-option {
   flex: 1;
   display: flex;
