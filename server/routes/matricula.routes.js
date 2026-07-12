@@ -20,6 +20,8 @@ router.put("/:id/estado", verifyToken, verifyRole("Administrador"), [
 ], matriculaController.cambiarEstado);
 router.put("/:id/seccion", verifyToken, verifyRole("Administrador"), matriculaController.actualizarSeccion);
 router.delete("/:id", verifyToken, verifyRole("Administrador"), matriculaController.eliminar);
+router.put("/:id/restaurar", verifyToken, verifyRole("Administrador"), matriculaController.restaurar);
+router.delete("/:id/permanente", verifyToken, verifyRole("Administrador"), matriculaController.eliminarFisicamente);
 router.post("/solicitar-revision", verifyToken, verifyRole("Apoderado"), matriculaController.solicitarRevision);
 
 module.exports = router;

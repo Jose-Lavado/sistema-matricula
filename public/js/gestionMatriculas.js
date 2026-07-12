@@ -58,7 +58,7 @@ function cargarMatriculas() {
       html += '<td><div class="d-flex justify-content-center gap-1">';
       html += '<button class="btn btn-sm btn-outline-secondary" title="Ver" onclick="verDetalle(' + m.id + ')"><i class="bi bi-eye"></i></button>';
       html += '<button class="btn btn-sm btn-outline-primary" title="Editar sección/grado" onclick="abrirModalSeccion(' + m.id + ')"><i class="bi bi-pencil-square"></i></button>';
-      html += '<button class="btn btn-sm btn-outline-warning p-0" style="width:30px;height:30px" title="Cambiar estado" onclick="abrirModalEstado(' + m.id + ",'" + m.estado + "'" + ')"><i class="bi bi-toggle-on"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-warning p-0" style="width:30px;height:30px" title="Toggle estado" onclick="abrirModalEstado(' + m.id + ",'" + m.estado + "'" + ')"><i class="bi bi-toggle-on"></i></button>';
       html += '<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminar(' + m.id + ')"><i class="bi bi-trash"></i></button>';
       html += "</div></td>";
       html += "</tr>";
@@ -245,11 +245,11 @@ function anularMatricula() {
 
 function confirmarEliminar(id) {
   deleteId = id;
-  document.getElementById("confirmMsg").textContent = "¿Está seguro de eliminar esta matrícula?";
+  document.getElementById("confirmMsg").textContent = "¿Está seguro de eliminar esta matrícula? (registro logico, aparecera en Reporte 4)";
   document.getElementById("confirmBtn").onclick = async function () {
     const res = await apiFetch("/matriculas/" + deleteId, { method: "DELETE" });
     if (res && !res.error) {
-      showSuccessAlert("Matrícula eliminada correctamente.");
+      showSuccessAlert("Matrícula eliminada (registro logico). Aparecera en Reporte 4.");
       cargarMatriculas();
     } else {
       showErrorAlert(res?.error || "Error al eliminar");

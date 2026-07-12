@@ -10,7 +10,7 @@ const logger = winston.createLogger({
       delete info.password;
       delete info.token;
       delete info.nuevaContrasena;
-      delete info.contraseña;
+      delete info.contrasena;
       return info;
     })(),
     winston.format.json()

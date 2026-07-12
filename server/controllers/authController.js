@@ -1,11 +1,12 @@
 // libreria: winston — Logger estructurado (equivalente a Logback en Java)
 // libreria: lodash — Utilidades para validación de strings (equivalente a Google Guava)
-// authController.js — login, register, verificar identidad, restablecer contraseña
+// authController.js — login, register, verificar identidad, restablecer contrasena
 const jwt = require("jsonwebtoken");
 const UsuarioFactory = require("../models/UsuarioFactory");
 const logger = require("../services/logger");
+const { registrarAcceso, registrarUsoClase } = require("../metrics/prometheus");
 
-// Validación de contraseña: 8+ caracteres, mayúscula, minúscula, dígito, carácter especial
+// Validación de contrasena: 8+ caracteres, mayúscula, minúscula, dígito, carácter especial
 function validarPassword(pass) {
   const faltan = [];
   if (!pass || pass.length < 8) faltan.push("mínimo 8 caracteres");
@@ -23,13 +24,16 @@ const authController = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ message: "Correo y contraseña son requeridos." });
+        return res.status(400).json({ message: "Correo y contrasena son requeridos." });
       }
 
       const user = await UsuarioFactory.login(email.toLowerCase().trim(), password);
       if (!user) {
-        return res.status(401).json({ message: "Correo o contraseña incorrectos." });
+        registrarAcceso("login", "fallido");
+        return res.status(401).json({ message: "Correo o contrasena incorrectos." });
       }
+
+      registrarAcceso("login", "exitoso");
 
       const token = jwt.sign(
         {
@@ -63,7 +67,7 @@ const authController = {
     return res.json({ message: "Sesión cerrada correctamente." });
   },
 
-  // Verificar identidad por DNI + correo (restablecer contraseña)
+  // Verificar identidad por DNI + correo (restablecer contrasena)
   verificarIdentidad: async (req, res) => {
     try {
       const { dni, correo } = req.body;
@@ -90,20 +94,20 @@ const authController = {
     }
   },
 
-  // Restablecer contraseña — valida formato y actualiza en BD
+  // Restablecer contrasena — valida formato y actualiza en BD
   restablecerContrasena: async (req, res) => {
     try {
       const { idUsuario, nuevaContrasena } = req.body;
       const errPass = validarPassword(nuevaContrasena);
       if (!idUsuario || errPass.length) {
-        return res.status(400).json({ message: "La contraseña debe tener: " + errPass.join(", ") + "." });
+        return res.status(400).json({ message: "La contrasena debe tener: " + errPass.join(", ") + "." });
       }
 
       const bcrypt = require("bcryptjs");
       const hashed = bcrypt.hashSync(nuevaContrasena, 10);
 
       await require("../config/db").query(
-        "UPDATE Usuario SET contraseña = ? WHERE idUsuario = ?",
+        "UPDATE Usuario SET contrasena = ? WHERE idUsuario = ?",
         [hashed, idUsuario]
       );
 
@@ -117,16 +121,18 @@ const authController = {
   // Registrar usuario — llama a registrarAdmin o registrarApoderado según rol
   register: async (req, res) => {
     try {
-      const { contraseña } = req.body;
-      const errPass = validarPassword(contraseña);
+      const { contrasena } = req.body;
+      const errPass = validarPassword(contrasena);
       if (errPass.length) {
-        return res.status(400).json({ message: "La contraseña debe tener: " + errPass.join(", ") + "." });
+        return res.status(400).json({ message: "La contrasena debe tener: " + errPass.join(", ") + "." });
       }
       const { rol } = req.body;
       if (rol === "ADMIN") {
+        registrarUsoClase("Admin", "registrar");
         const Admin = require("../models/Admin");
         const admin = new Admin();
         const result = await admin.registrarAdmin(req.body);
+        registrarAcceso("registro", "exitoso");
         return res.status(201).json({
           message: "Administrador registrado correctamente.",
           idUsuario: result.idUsuario,
@@ -137,9 +143,11 @@ const authController = {
       if (!req.body.parentesco || !VALID_PARENTESCOS.includes(req.body.parentesco.toUpperCase())) {
         return res.status(400).json({ message: "El parentesco debe ser uno de: PADRE, MADRE, TUTOR, APODERADO LEGAL, OTRO" });
       }
+      registrarUsoClase("Apoderado", "registrar");
       const Apoderado = require("../models/Apoderado");
       const apoderado = new Apoderado();
       const result = await apoderado.registrarApoderado(req.body);
+      registrarAcceso("registro", "exitoso");
       return res.status(201).json({
         message: "Apoderado registrado correctamente.",
         idUsuario: result.idUsuario,

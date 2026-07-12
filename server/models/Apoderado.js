@@ -14,13 +14,13 @@ class Apoderado extends Usuario {
 
   // Registrar apoderado — INSERT en Usuario + Apoderado (transacción)
   async registrarApoderado(datos) {
-    const { nombre, apellido, correo, contraseña, dni, telefono, direccion, parentesco } = datos;
-    const hashed = require("bcryptjs").hashSync(contraseña, 10);
+    const { nombre, apellido, correo, contrasena, dni, telefono, direccion, parentesco } = datos;
+    const hashed = require("bcryptjs").hashSync(contrasena, 10);
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
       const [u] = await conn.query(
-        "INSERT INTO Usuario (nombre, apellido, correo, contraseña, rol) VALUES (?, ?, ?, ?, 'APODERADO')",
+        "INSERT INTO Usuario (nombre, apellido, correo, contrasena, rol) VALUES (?, ?, ?, ?, 'APODERADO')",
         [nombre, apellido, correo, hashed]
       );
       const [a] = await conn.query(

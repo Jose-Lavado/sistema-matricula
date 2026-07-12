@@ -1,6 +1,6 @@
 // register.js — formulario de registro con validación de campos en tiempo real
 document.getElementById("togglePwd").addEventListener("click", () => {
-  const pwd = document.getElementById("contraseña");
+  const pwd = document.getElementById("contrasena");
   const icon = document.getElementById("eyeIcon");
   const esTexto = pwd.type === "password";
   pwd.type = esTexto ? "text" : "password";
@@ -51,7 +51,7 @@ function validarCampo(input) {
       if (!val) return validateField(input, "error", "Correo requerido");
       if (!val.includes("@") || !val.includes(".")) return validateField(input, "error", "Formato de correo inválido");
       return validateField(input, "success", "Correo válido");
-    case "contraseña":
+    case "contrasena":
       actualizarRequisitosPass(val);
       if (!val) return validateField(input, "error", "Contraseña requerida");
       const errs = validarPassword(val);
@@ -72,7 +72,7 @@ function validarCampo(input) {
 document.querySelectorAll("#registerForm input, #registerForm select").forEach(function(el) {
   el.addEventListener("blur", function() { validarCampo(this); });
   el.addEventListener("input", function() {
-    if (el.id === "contraseña") validarCampo(this);
+    if (el.id === "contrasena") validarCampo(this);
     else if (this.value.trim()) validarCampo(this);
   });
 });
@@ -83,17 +83,17 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
   const nombre = document.getElementById("nombre").value.trim();
   const apellido = document.getElementById("apellido").value.trim();
   const correo = document.getElementById("correo").value.trim().toLowerCase();
-  const contraseña = document.getElementById("contraseña").value;
+  const contrasena = document.getElementById("contrasena").value;
   const dni = document.getElementById("dni").value.trim();
   const telefono = document.getElementById("telefono").value.trim() || null;
   const direccion = document.getElementById("direccion").value.trim() || null;
   const parentesco = document.getElementById("parentesco").value;
 
-  if (!nombre || !apellido || !correo || !contraseña || !dni || !telefono || !direccion || !parentesco) {
+  if (!nombre || !apellido || !correo || !contrasena || !dni || !telefono || !direccion || !parentesco) {
     showNotification("error", "Campos incompletos", "Completa todos los campos obligatorios.");
     return;
   }
-  const errPass = validarPassword(contraseña);
+  const errPass = validarPassword(contrasena);
   if (errPass.length) {
     showNotification("error", "Contraseña inválida", "Debe tener: " + errPass.join(", ") + ".");
     return;
@@ -116,7 +116,7 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, apellido, correo, contraseña, dni, telefono, direccion, parentesco }),
+      body: JSON.stringify({ nombre, apellido, correo, contrasena, dni, telefono, direccion, parentesco }),
     });
 
     const data = await res.json();

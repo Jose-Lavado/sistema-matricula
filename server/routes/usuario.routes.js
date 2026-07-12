@@ -18,7 +18,7 @@ router.put("/:id", verifyToken, [
     next();
   },
 ], usuarioController.actualizar);
-// Validación de nueva contraseña (mínimo 8 caracteres)
+// Validación de nueva contrasena (mínimo 8 caracteres)
 router.put("/:id/password", verifyToken, [
   body("passwordNuevo").isLength({ min: 8 }).withMessage("Contraseña debe tener mínimo 8 caracteres"),
   (req, res, next) => {

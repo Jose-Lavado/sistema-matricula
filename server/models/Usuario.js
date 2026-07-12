@@ -8,19 +8,19 @@ class Usuario {
     this.nombre = data.nombre || "";
     this.apellido = data.apellido || "";
     this.correo = data.correo || "";
-    this.contraseña = data.contraseña || "";
+    this.contrasena = data.contrasena || "";
     this.rol = data.rol || "";
     this.fechaRegistro = data.fechaRegistro || null;
   }
 
-  // Iniciar sesión — validar credenciales (correo + contraseña)
-  async iniciarSesion(correo, contraseña) {
+  // Iniciar sesión — validar credenciales (correo + contrasena)
+  async iniciarSesion(correo, contrasena) {
     const [rows] = await pool.query(
       "SELECT * FROM Usuario WHERE correo = ?", [correo]
     );
     if (rows.length === 0) return null;
     const usuario = rows[0];
-    const ok = await bcrypt.compare(contraseña, usuario.contraseña);
+    const ok = await bcrypt.compare(contrasena, usuario.contrasena);
     if (!ok) return null;
     return usuario;
   }

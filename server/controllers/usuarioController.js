@@ -1,14 +1,16 @@
 // libreria: winston — Logger (equivalente a Logback en Java)
-// usuarioController.js — CRUD de usuarios, perfil propio, cambio de contraseña
+// usuarioController.js — CRUD de usuarios, perfil propio, cambio de contrasena
 const Usuario = require("../models/Usuario");
 const Admin = require("../models/Admin");
 const Apoderado = require("../models/Apoderado");
 const logger = require("../services/logger");
+const { registrarUsoClase } = require("../metrics/prometheus");
 
 const usuarioController = {
   // Listar todos los usuarios
   listar: async (req, res) => {
     try {
+      registrarUsoClase("Usuario", "findAll");
       const usuarios = await Usuario.findAll();
       return res.json(usuarios);
     } catch (err) {
@@ -20,6 +22,7 @@ const usuarioController = {
   // Obtener usuario por ID (incluye datos extra según rol)
   obtener: async (req, res) => {
     try {
+      registrarUsoClase("Usuario", "findById");
       const usuario = await Usuario.findById(req.params.id);
       if (!usuario) return res.status(404).json({ message: "Usuario no encontrado." });
 
@@ -87,7 +90,7 @@ const usuarioController = {
     }
   },
 
-  // Cambiar contraseña — valida actual y formato de la nueva, luego actualiza
+  // Cambiar contrasena — valida actual y formato de la nueva, luego actualiza
   cambiarPassword: async (req, res) => {
     try {
       const { passwordActual, passwordNuevo } = req.body;
@@ -98,20 +101,20 @@ const usuarioController = {
       if (!/[0-9]/.test(passwordNuevo)) errs.push("un número");
       if (!/[^A-Za-z0-9]/.test(passwordNuevo)) errs.push("un carácter especial");
       if (errs.length) {
-        return res.status(400).json({ message: "La contraseña debe tener: " + errs.join(", ") + "." });
+        return res.status(400).json({ message: "La contrasena debe tener: " + errs.join(", ") + "." });
       }
       const pool = require("../config/db");
       const bcrypt = require("bcryptjs");
-      const [rows] = await pool.query("SELECT contraseña FROM Usuario WHERE idUsuario = ?", [req.params.id]);
+      const [rows] = await pool.query("SELECT contrasena FROM Usuario WHERE idUsuario = ?", [req.params.id]);
       if (rows.length === 0) return res.status(404).json({ message: "Usuario no encontrado." });
-      const ok = await bcrypt.compare(passwordActual, rows[0].contraseña);
+      const ok = await bcrypt.compare(passwordActual, rows[0].contrasena);
       if (!ok) return res.status(400).json({ message: "Contraseña actual incorrecta." });
       const hashed = bcrypt.hashSync(passwordNuevo, 10);
-      await pool.query("UPDATE Usuario SET contraseña = ? WHERE idUsuario = ?", [hashed, req.params.id]);
+      await pool.query("UPDATE Usuario SET contrasena = ? WHERE idUsuario = ?", [hashed, req.params.id]);
       return res.json({ message: "Contraseña actualizada." });
     } catch (err) {
       logger.error(err);
-      return res.status(500).json({ message: "Error al cambiar contraseña." });
+      return res.status(500).json({ message: "Error al cambiar contrasena." });
     }
   },
 

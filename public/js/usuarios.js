@@ -276,10 +276,10 @@ async function guardarUsuario() {
     const pass = document.getElementById('m_pass').value;
     const pass2 = document.getElementById('m_pass2').value;
     const errs = validarPassword(pass);
-    if (errs.length) { showErrorAlert('La contraseña debe tener: ' + errs.join(", ") + '.'); return; }
-    if (pass !== pass2) { showErrorAlert('Las contraseñas no coinciden.'); return; }
+    if (errs.length) { showErrorAlert('La contrasena debe tener: ' + errs.join(", ") + '.'); return; }
+    if (pass !== pass2) { showErrorAlert('Las contrasenas no coinciden.'); return; }
 
-    const body = { nombre, apellido, dni, correo, rol, telefono, parentesco, direccion, contraseña: pass };
+    const body = { nombre, apellido, dni, correo, rol, telefono, parentesco, direccion, contrasena: pass };
 
     try {
       var result = await apiFetch("/auth/register", { method: "POST", body: JSON.stringify(body) });

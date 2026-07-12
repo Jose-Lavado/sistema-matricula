@@ -26,7 +26,7 @@ class UsuarioFactory {
   }
 
   // Iniciar sesión — verifica credenciales, devuelve instancia con datos extra según rol
-  static async login(correo, contraseña) {
+  static async login(correo, contrasena) {
     const [rows] = await pool.query(
       "SELECT * FROM Usuario WHERE correo = ?", [correo]
     );
@@ -35,7 +35,7 @@ class UsuarioFactory {
     const usuario = rows[0];
     const bcrypt = require("bcryptjs");
 
-    const ok = await bcrypt.compare(contraseña, usuario.contraseña);
+    const ok = await bcrypt.compare(contrasena, usuario.contrasena);
     if (!ok) return null;
 
     const userInstance = UsuarioFactory.crearUsuario(usuario.rol, usuario);

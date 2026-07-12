@@ -3,6 +3,7 @@
 const Matricula = require("../models/Matricula");
 const pool = require("../config/db");
 const logger = require("../services/logger");
+const { registrarMatricula, registrarUsoClase } = require("../metrics/prometheus");
 
 const matriculaController = {
   listar: async (req, res) => {
@@ -41,7 +42,7 @@ const matriculaController = {
 
       const [dup] = await pool.query(
         `SELECT idMatricula, estado FROM Matricula
-         WHERE idAlumno = ? AND periodoAcademico = YEAR(CURDATE())`,
+         WHERE idAlumno = ? AND periodoAcademico = YEAR(CURDATE()) AND fechaEliminacion IS NULL`,
         [idAlumnoFinal]
       );
       if (dup.length > 0) {
@@ -57,6 +58,8 @@ const matriculaController = {
 
       const mat = new Matricula({ idUsuario: req.user.id });
       const id = await mat.registrar(idAlumnoFinal, grado, idSeccion || null);
+      registrarMatricula("crear", "exitoso");
+      registrarUsoClase("Matricula", "registrar");
       const creada = await Matricula.consultar(id);
       return res.status(201).json({ message: "Matrícula registrada.", matricula: creada });
     } catch (err) {
@@ -76,6 +79,8 @@ const matriculaController = {
 
       const mat = new Matricula(data);
       await mat.cambiarEstado(estado, req.user.id, `Cambio a ${estado}`);
+      registrarMatricula(estado.toLowerCase(), "exitoso");
+      registrarUsoClase("Matricula", "cambiarEstado");
       return res.json({ message: "Estado actualizado.", estado });
     } catch (err) {
       logger.error(err);
@@ -104,14 +109,42 @@ const matriculaController = {
   eliminar: async (req, res) => {
     try {
       const mat = new Matricula();
-      await mat.eliminar(req.params.id);
-      return res.json({ message: "Matrícula eliminada." });
+      await mat.eliminar(req.params.id, req.user.id);
+      return res.json({ message: "Matrícula eliminada (registro lógico)." });
     } catch (err) {
       if (err.message && err.message.startsWith("No se puede eliminar")) {
         return res.status(400).json({ message: err.message });
       }
       logger.error(err);
       return res.status(500).json({ message: "Error al eliminar matrícula." });
+    }
+  },
+
+  restaurar: async (req, res) => {
+    try {
+      const mat = new Matricula();
+      await mat.restaurar(req.params.id);
+      return res.json({ message: "Matrícula restaurada." });
+    } catch (err) {
+      if (err.message && err.message.startsWith("Matrícula no encontrada")) {
+        return res.status(400).json({ message: err.message });
+      }
+      logger.error(err);
+      return res.status(500).json({ message: "Error al restaurar matrícula." });
+    }
+  },
+
+  eliminarFisicamente: async (req, res) => {
+    try {
+      const mat = new Matricula();
+      await mat.eliminarFisicamente(req.params.id);
+      return res.json({ message: "Matrícula eliminada permanentemente." });
+    } catch (err) {
+      if (err.message && err.message.startsWith("Matrícula no encontrada")) {
+        return res.status(400).json({ message: err.message });
+      }
+      logger.error(err);
+      return res.status(500).json({ message: "Error al eliminar matrícula permanentemente." });
     }
   },
 
