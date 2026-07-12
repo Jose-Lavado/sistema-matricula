@@ -4,6 +4,11 @@ let alumnoOk = false;
 let alumnoIdReinscripcion = null;
 let apoderadoData = null;
 
+(function () {
+  const fnac = document.getElementById("n_fnac");
+  if (fnac) fnac.max = new Date().toISOString().split("T")[0];
+})();
+
 fetch("/components/sidebar.html")
   .then(r => r.text())
   .then(html => {
@@ -192,6 +197,10 @@ async function confirmarMatricula() {
 
     if (!nombre || !apellido || !dni || dni.length !== 8 || !fnac) {
       showErrorAlert("Completa todos los datos obligatorios del alumno, incluido el DNI (8 dígitos).");
+      return;
+    }
+    if (new Date(fnac) > new Date()) {
+      showErrorAlert("La fecha de nacimiento no puede ser futura.");
       return;
     }
     if (!sexo) {

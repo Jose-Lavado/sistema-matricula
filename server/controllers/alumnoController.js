@@ -58,6 +58,10 @@ const alumnoController = {
         return res.status(400).json({ message: "Datos del alumno no válidos." });
       }
 
+      if (fechaNacimiento && !alumno.validarFechaNacimiento(fechaNacimiento)) {
+        return res.status(400).json({ message: "La fecha de nacimiento no es válida (no puede ser futura)." });
+      }
+
       const Admin = require("../models/Admin");
       const admin = new Admin();
       const id = await admin.registrarAlumno({ idApoderado, nombre, apellido, dni, fechaNacimiento, genero });

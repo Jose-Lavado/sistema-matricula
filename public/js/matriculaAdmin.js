@@ -1,6 +1,11 @@
 // matriculaAdmin.js — formulario de matrícula (admin): buscar apoderado, alumno nuevo o reinscripción
 let tipoActual = null, padreOk = false, padreData = null, alumnoOk = false, alumnoData = null, selectedSeccionId = null;
 
+(function () {
+  var fnac = document.getElementById("an_fnac");
+  if (fnac) fnac.max = new Date().toISOString().split("T")[0];
+})();
+
 fetch("/components/sidebar.html")
   .then(function (r) { return r.text(); })
   .then(function (html) {
@@ -241,6 +246,9 @@ async function confirmar() {
       !document.getElementById('an_fnac').value ||
       !document.querySelector('input[name="an_sexo"]:checked')) {
       showErrorAlert('Completa todos los datos obligatorios del alumno, incluido el DNI (8 dígitos).'); return;
+    }
+    if (new Date(document.getElementById('an_fnac').value) > new Date()) {
+      showErrorAlert('La fecha de nacimiento no puede ser futura.'); return;
     }
 
     var dni = document.getElementById('an_dni').value.trim();

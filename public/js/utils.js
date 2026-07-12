@@ -3,6 +3,7 @@ function calcularEdad(fechaNacimiento) {
   if (!fechaNacimiento) return "—";
   const n = new Date(fechaNacimiento);
   const h = new Date();
+  if (n > h) return "—";
   let e = h.getFullYear() - n.getFullYear();
   const d = h.getMonth() - n.getMonth();
   if (d < 0 || (d === 0 && h.getDate() < n.getDate())) e--;

@@ -39,6 +39,11 @@
               </button>
             </li>
             <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r3" type="button">
+                <i class="bi bi-person-exclamation me-1"></i> Sin Matrícula
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r4" type="button">
                 <i class="bi bi-trash me-1"></i> Eliminadas
               </button>
@@ -60,8 +65,6 @@
             <!-- REPORTE 1: Matriculas por Periodo -->
             <div class="tab-pane fade show active" id="r1">
               <div class="filter-bar d-flex align-items-center gap-3 mb-3">
-                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Producto -
-                  Total de matriculas registradas</span>
                 <div class="ms-auto d-flex align-items-center gap-2">
                   <select class="form-select form-select-sm w-auto" id="r1FilterGrado" onchange="cargarR1()">
                     <option value="">Todos los grados</option>
@@ -168,8 +171,6 @@
             <!-- REPORTE 2: Productividad del Personal -->
             <div class="tab-pane fade" id="r2">
               <div class="filter-bar d-flex align-items-center gap-3 mb-3">
-                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Eficiencia -
-                  Productividad del Personal</span>
               </div>
               <div class="row g-3 mb-3">
                 <div class="col-6 col-md-3">
@@ -243,6 +244,48 @@
               </div>
             </div>
 
+            <!-- REPORTE 3: Alumnos sin Matrícula -->
+            <div class="tab-pane fade" id="r3">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6 col-md-4">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Sin Matrícula</small>
+                        <h4 class="fw-bold text-danger mb-0" id="r3KpiTotal">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-danger bg-opacity-10"><i class="bi bi-person-exclamation fs-5 text-danger"></i></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-header bg-white border-0 p-4">
+                  <h5 class="section-title mb-0">Alumnos registrados sin matrícula activa</h5>
+                </div>
+                <div class="card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">Alumno</th>
+                        <th>DNI</th>
+                        <th>F. Nacimiento</th>
+                        <th>Apoderado</th>
+                        <th>DNI Padre</th>
+                        <th>Teléfono</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r3Body">
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
             <!-- REPORTE 4: Matriculas Eliminadas -->
             <div class="tab-pane fade" id="r4">
               <div class="filter-bar d-flex align-items-center gap-3 mb-3">
@@ -288,8 +331,6 @@
             <!-- REPORTE 5: Cumplimiento de Matriculas -->
             <div class="tab-pane fade" id="r5">
               <div class="filter-bar d-flex align-items-center gap-3 mb-3">
-                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Eficacia -
-                  Matriculas realizadas vs capacidad total</span>
               </div>
               <div class="row g-3 mb-3">
                 <div class="col-md-4">

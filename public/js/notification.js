@@ -34,7 +34,7 @@
     dropdown.id = "notifDropdown";
     dropdown.className = "dropdown-menu shadow border-0";
     dropdown.style.cssText =
-      "position:absolute;top:100%;right:0;left:auto;min-width:340px;max-height:420px;overflow-y:auto;border-radius:12px;margin-top:6px;z-index:9999;display:none;";
+      "position:absolute;top:100%;right:0;left:auto;min-width:340px;max-height:420px;overflow-y:auto;border-radius:12px;margin-top:6px;z-index:9999;display:none;word-break:break-word;";
 
     const header = document.createElement("div");
     header.className =

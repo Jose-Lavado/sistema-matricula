@@ -149,7 +149,7 @@ class Admin extends Usuario {
         JOIN Usuario u ON ap.idUsuario = u.idUsuario
         JOIN Seccion s ON m.idSeccion = s.idSeccion
         WHERE ${where.join(" AND ")}
-        ORDER BY m.fechaRegistro DESC
+        ORDER BY m.fechaRegistro ASC
       `, params);
       return rows;
     }

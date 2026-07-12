@@ -25,10 +25,20 @@ class Alumno {
     return true;
   }
 
+  validarFechaNacimiento(fechaNacimiento) {
+    if (!fechaNacimiento) return false;
+    const fecha = new Date(fechaNacimiento);
+    if (isNaN(fecha.getTime())) return false;
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999);
+    return fecha <= hoy;
+  }
+
   calcularEdad() {
     if (!this.fechaNacimiento) return 0;
     const hoy = new Date();
     const nac = new Date(this.fechaNacimiento);
+    if (nac > hoy) return 0;
     let edad = hoy.getFullYear() - nac.getFullYear();
     const m = hoy.getMonth() - nac.getMonth();
     if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;

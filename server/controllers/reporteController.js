@@ -135,6 +135,32 @@ const reporteController = {
       return res.status(500).json({ message: "Error al obtener vacantes." });
     }
   },
+
+  sinMatricula: async (req, res) => {
+    try {
+      const [rows] = await pool.query(`
+        SELECT
+          a.idAlumno,
+          a.dni AS dni_alumno,
+          CONCAT(a.nombre, ' ', a.apellido) AS alumno,
+          a.genero,
+          a.fechaNacimiento,
+          CONCAT(u.nombre, ' ', u.apellido) AS apoderado,
+          ap.dni AS dni_apoderado,
+          ap.telefono AS telefono_apoderado
+        FROM Alumno a
+        INNER JOIN Apoderado ap ON a.idApoderado = ap.idApoderado
+        INNER JOIN Usuario u ON ap.idUsuario = u.idUsuario
+        LEFT JOIN Matricula m ON a.idAlumno = m.idAlumno
+        WHERE m.idMatricula IS NULL
+        ORDER BY a.nombre
+      `);
+      return res.json(rows);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).json({ message: "Error al obtener alumnos sin matrícula." });
+    }
+  },
 };
 
 module.exports = reporteController;

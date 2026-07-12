@@ -32,6 +32,7 @@ function actualizarRequisitosPass(val) {
 let paginaActual = 1;
 let totalPaginas = 1;
 let usuariosCache = [];
+let usuariosFiltrados = null;
 
 fetch("/components/sidebar.html")
   .then(r => r.text())
@@ -60,9 +61,10 @@ async function cargarUsuarios(pagina) {
 
 function renderTabla() {
   const tbody = document.getElementById("tbodyUsuarios");
+  const fuente = usuariosFiltrados || usuariosCache;
   const inicio = (paginaActual - 1) * PAGE_SIZE;
   const fin = inicio + PAGE_SIZE;
-  const pagina = usuariosCache.slice(inicio, fin);
+  const pagina = fuente.slice(inicio, fin);
 
   if (!pagina.length) {
     tbody.innerHTML = '<tr><td class="ps-4 text-muted" colspan="6">No hay usuarios registrados.</td></tr>';
@@ -256,6 +258,7 @@ function limpiarModal() {
     }
     if (typeof clearField === 'function') clearField(el);
   });
+  if (typeof actualizarRequisitosPass === 'function') actualizarRequisitosPass('');
 }
 
 async function guardarUsuario() {
@@ -270,7 +273,7 @@ async function guardarUsuario() {
     const rol = document.getElementById('m_rol').value;
     const parentesco = document.getElementById('m_parentesco').value;
 
-    if (!nombre || !apellido || !dni || !correo || !rol) {
+    if (!nombre || !apellido || (rol !== 'ADMIN' && !dni) || !correo || !rol) {
       showErrorAlert('Completa todos los campos obligatorios (*)'); return;
     }
     const pass = document.getElementById('m_pass').value;
@@ -336,29 +339,36 @@ async function confirmarEliminar(btn) {
 }
 
 function filtrarTabla() {
-  const q = document.getElementById('inputBuscar').value.toLowerCase();
-  const rol = document.getElementById('selectRol').value.toLowerCase();
-  let visible = 0;
-  document.querySelectorAll('#tablaUsuarios tbody tr').forEach(tr => {
-    const texto = tr.textContent.toLowerCase();
-    const badgeText = tr.querySelector('.badge')?.textContent.toLowerCase() || '';
-    const matchQ = texto.includes(q);
-    const matchRol = !rol || badgeText.includes(rol.toLowerCase());
-    tr.style.display = matchQ && matchRol ? '' : 'none';
-    if (matchQ && matchRol) visible++;
-  });
-  document.getElementById('contadorRegistros').textContent = `Mostrando ${visible} registros`;
+  const q = document.getElementById('inputBuscar').value.toLowerCase().trim();
+  const rol = document.getElementById('selectRol').value;
+  if (!q && !rol) {
+    usuariosFiltrados = null;
+  } else {
+    usuariosFiltrados = usuariosCache.filter(u => {
+      const texto = [u.nombre, u.apellido, u.dni, u.correo].filter(Boolean).join(' ').toLowerCase();
+      const matchQ = !q || texto.includes(q);
+      const matchRol = !rol || u.rol === rol;
+      return matchQ && matchRol;
+    });
+  }
+  paginaActual = 1;
+  const fuente = usuariosFiltrados || usuariosCache;
+  totalPaginas = Math.max(1, Math.ceil(fuente.length / PAGE_SIZE));
+  renderTabla();
 }
 
 function limpiarFiltros() {
   document.getElementById('inputBuscar').value = '';
   document.getElementById('selectRol').value = '';
-  filtrarTabla();
+  usuariosFiltrados = null;
+  paginaActual = 1;
+  totalPaginas = Math.max(1, Math.ceil(usuariosCache.length / PAGE_SIZE));
+  renderTabla();
 }
 
 function actualizarContador() {
-  const total = document.querySelectorAll('#tablaUsuarios tbody tr').length;
-  document.getElementById('contadorRegistros').textContent = `Mostrando ${total} registros (${usuariosCache.length} totales)`;
+  const fuente = usuariosFiltrados || usuariosCache;
+  document.getElementById('contadorRegistros').textContent = `Mostrando ${fuente.length} registros`;
 }
 
 cargarUsuarios(1);

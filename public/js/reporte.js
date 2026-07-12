@@ -88,8 +88,9 @@ async function cargarR2() {
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="progress flex-grow-1" style="height:20px; max-width:100px">
-                  <div class="progress-bar ${pct >= 70 ? 'bg-success' : pct >= 40 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%">${pct}%</div>
+                  <div class="progress-bar ${pct >= 70 ? 'bg-success' : pct >= 40 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%"></div>
                 </div>
+                <small class="text-muted">${pct}%</small>
               </div>
             </td>
           </tr>`;
@@ -101,6 +102,33 @@ async function cargarR2() {
   } catch (e) {
     console.error("Error R2:", e);
     showErrorAlert("Error al cargar Reporte 2.");
+  }
+}
+
+// ==================== REPORTE 3: Alumnos sin Matrícula ====================
+async function cargarR3() {
+  try {
+    const data = await apiFetch("/reportes/sin-matricula");
+    const tbody = document.getElementById("r3Body");
+    document.getElementById("r3KpiTotal").textContent = data ? data.length : 0;
+    if (data && data.length) {
+      tbody.innerHTML = data.map(r => {
+        const fnac = r.fechaNacimiento ? new Date(r.fechaNacimiento).toLocaleDateString("es-PE") : "-";
+        return `<tr>
+          <td class="ps-4 fw-medium">${r.alumno || "-"}</td>
+          <td>${r.dni_alumno || "-"}</td>
+          <td>${fnac}</td>
+          <td>${r.apoderado || "-"}</td>
+          <td>${r.dni_apoderado || "-"}</td>
+          <td>${r.telefono_apoderado || "-"}</td>
+        </tr>`;
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Todos los alumnos tienen matrícula activa</td></tr>';
+    }
+  } catch (e) {
+    console.error("Error R3:", e);
+    showErrorAlert("Error al cargar Reporte 3.");
   }
 }
 
@@ -148,6 +176,7 @@ async function restaurarMatricula(id) {
       bootstrap.Modal.getInstance(document.getElementById("r4ConfirmModal")).hide();
       showSuccessAlert("Matrícula restaurada correctamente.");
       cargarR4();
+      cargarR1();
     } else {
       showErrorAlert(res?.error || "Error al restaurar");
     }
@@ -194,8 +223,9 @@ async function cargarR5() {
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="progress flex-grow-1" style="height:20px;max-width:120px">
-                  <div class="progress-bar ${pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%">${pct}%</div>
+                  <div class="progress-bar ${pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%"></div>
                 </div>
+                <small class="text-muted">${pct}%</small>
               </div>
             </td>
             <td>${obs}</td>
@@ -236,10 +266,10 @@ async function cargarR6() {
           <td>${s.capacidad}</td>
           <td class="text-success fw-semibold">${s.vacantes}</td>
           <td>${s.ocupadas}</td>
-          <td>
+            <td>
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1" style="height:20px; max-width:120px">
-                <div class="progress-bar ${barClass}" style="width:${pct}%">${pct}%</div>
+                <div class="progress-bar ${barClass}" style="width:${pct}%"></div>
               </div>
               <small class="text-muted">${pct}%</small>
             </div>
@@ -477,6 +507,7 @@ document.querySelectorAll('#reportesTab button[data-bs-toggle="tab"]').forEach(t
   tab.addEventListener("shown.bs.tab", function (e) {
     const target = e.target.getAttribute("data-bs-target");
     if (target === "#r2") cargarR2();
+    else if (target === "#r3") cargarR3();
     else if (target === "#r4") cargarR4();
     else if (target === "#r5") cargarR5();
     else if (target === "#r6") cargarR6();
