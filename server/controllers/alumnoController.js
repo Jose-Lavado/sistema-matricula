@@ -2,10 +2,12 @@
 // alumnoController.js — listar, buscar por DNI, crear, verificar duplicados
 const Alumno = require("../models/Alumno");
 const logger = require("../services/logger");
+const { registrarUsoClase } = require("../metrics/prometheus");
 
 const alumnoController = {
   listar: async (req, res) => {
     try {
+      registrarUsoClase("Alumno", "findAll");
       const alumnos = await Alumno.findAll();
       return res.json(alumnos);
     } catch (err) {
@@ -41,6 +43,7 @@ const alumnoController = {
 
   crear: async (req, res) => {
     try {
+      registrarUsoClase("Alumno", "crear");
       const { idApoderado, nombre, apellido, dni, fechaNacimiento, genero } = req.body;
 
       if (!idApoderado) {

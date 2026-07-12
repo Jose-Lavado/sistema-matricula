@@ -23,6 +23,7 @@
     "jsonwebtoken": "^9.0.3",
     "lodash": "^4.18.1",
     "mysql2": "^3.14.1",
+    "prom-client": "^15.1.3",
     "uuid": "^14.0.0",
     "validator": "^13.15.35",
     "winston": "^3.19.0"

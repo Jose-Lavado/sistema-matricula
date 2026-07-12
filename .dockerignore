@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+logs/
+reportes/
+server_out.txt
+server_err.txt
+*.md
+mockups_reportes/
+guia_semanas_13_17_v2.docx

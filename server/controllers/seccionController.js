@@ -2,10 +2,12 @@
 // seccionController.js — listar secciones, vacantes por grado, totales, actualizar vacantes
 const Seccion = require("../models/Seccion");
 const logger = require("../services/logger");
+const { registrarUsoClase } = require("../metrics/prometheus");
 
 const seccionController = {
   listar: async (req, res) => {
     try {
+      registrarUsoClase("Seccion", "findAll");
       const { grado } = req.query;
       let secciones;
       if (grado) {
@@ -42,6 +44,7 @@ const seccionController = {
 
   actualizarVacantes: async (req, res) => {
     try {
+      registrarUsoClase("Seccion", "actualizarVacantes");
       const { id } = req.params;
       const { vacantes } = req.body;
       const seccion = await Seccion.findById(id);

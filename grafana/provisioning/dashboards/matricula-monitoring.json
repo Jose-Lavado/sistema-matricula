@@ -1,0 +1,300 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "CPU %",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "pointSize": 5
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_user_seconds_total{app=\"matricula-app\"}[1m])",
+          "legendFormat": "CPU User",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(process_cpu_system_seconds_total{app=\"matricula-app\"}[1m])",
+          "legendFormat": "CPU System",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Memoria",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "MB",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "pointSize": 5
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{app=\"matricula-app\"}",
+          "legendFormat": "RSS (Resident)",
+          "refId": "A"
+        },
+        {
+          "expr": "process_heap_used_bytes{app=\"matricula-app\"}",
+          "legendFormat": "Heap Used",
+          "refId": "B"
+        },
+        {
+          "expr": "nodejs_heap_size_total_bytes{app=\"matricula-app\"}",
+          "legendFormat": "Heap Total",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "Clases del Backend - Uso",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Invocaciones",
+            "lineWidth": 1,
+            "fillOpacity": 50
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "expr": "sum by (clase) (increase(matricula_clases_uso_total[1h]))",
+          "legendFormat": "{{clase}}",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "Accesos de Usuarios",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value"] },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (tipo, resultado) (increase(matricula_accesos_usuarios_total[1h]))",
+          "legendFormat": "{{tipo}} - {{resultado}}",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "HTTP Requests por Ruta",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Requests",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum by (route, method) (rate(matricula_http_requests_total[1m]))",
+          "legendFormat": "{{method}} {{route}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Tiempo de Respuesta",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "ms",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, route) (rate(matricula_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P50 {{route}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, route) (rate(matricula_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P95 {{route}}",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, route) (rate(matricula_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "P99 {{route}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "Operaciones de Matricula",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(matricula_operaciones_total{operacion=\"crear\"}[1h]))",
+          "legendFormat": "Crear",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(matricula_operaciones_total{operacion=\"aprobar\"}[1h]))",
+          "legendFormat": "Aprobar",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(increase(matricula_operaciones_total{operacion=\"rechazar\"}[1h]))",
+          "legendFormat": "Rechazar",
+          "refId": "C"
+        }
+      ],
+      "datasource": { "type": "prometheus", "name": "Prometheus" }
+    },
+    {
+      "title": "Uptime del Servidor",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{app=\"matricula-app\"}",
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["matricula", "monitoring", "nodejs"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "America/Lima",
+  "title": "Matricula App - Monitoring Dashboard",
+  "uid": "matricula-monitoring-001",
+  "version": 1
+}

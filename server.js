@@ -7,6 +7,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
 const logger = require("./server/services/logger");
+const { register, httpRequests, httpRequestDuration } = require("./server/metrics/prometheus");
 
 const app = express();
 
@@ -15,6 +16,25 @@ require("./server/services/initNotificadores");
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+// ===== MIDDLEWARE DE METRICAS =====
+app.use((req, res, next) => {
+  if (req.path === "/metrics") return next();
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = (Date.now() - start) / 1000;
+    const route = req.route ? req.route.path : req.path;
+    httpRequests.inc({ method: req.method, route, status: res.statusCode });
+    httpRequestDuration.observe({ method: req.method, route }, duration);
+  });
+  next();
+});
+
+// ===== ENDPOINT DE METRICAS PARA PROMETHEUS =====
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
+});
 
 app.use(express.static(path.join(__dirname, "public")));
 

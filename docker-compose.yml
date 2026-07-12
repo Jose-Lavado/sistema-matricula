@@ -1,0 +1,92 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: matricula-mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: sistema_matricula
+      MYSQL_USER: matricula_user
+      MYSQL_PASSWORD: matricula_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./bd/bd_sistema_matricula.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - matricula-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: matricula-app
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: matricula_user
+      DB_PASSWORD: matricula_pass
+      DB_NAME: sistema_matricula
+      JWT_SECRET: matricula_secret_key_2026
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - matricula-net
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: matricula-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - matricula-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: matricula-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - app
+      - cadvisor
+    networks:
+      - matricula-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: matricula-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - matricula-net
+
+volumes:
+  mysql_data:
+  grafana_data:
+
+networks:
+  matricula-net:
+    driver: bridge
