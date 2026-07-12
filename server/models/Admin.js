@@ -10,13 +10,13 @@ class Admin extends Usuario {
 
   // Registrar admin — INSERT en Usuario + Admin (transacción)
   async registrarAdmin(datos) {
-    const { nombre, apellido, correo, contraseña } = datos;
-    const hashed = require("bcryptjs").hashSync(contraseña, 10);
+    const { nombre, apellido, correo, contrasena } = datos;
+    const hashed = require("bcryptjs").hashSync(contrasena, 10);
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
       const [u] = await conn.query(
-        "INSERT INTO Usuario (nombre, apellido, correo, contraseña, rol) VALUES (?, ?, ?, ?, 'ADMIN')",
+        "INSERT INTO Usuario (nombre, apellido, correo, contrasena, rol) VALUES (?, ?, ?, ?, 'ADMIN')",
         [nombre, apellido, correo, hashed]
       );
       const [a] = await conn.query(
@@ -90,9 +90,12 @@ class Admin extends Usuario {
     );
   }
 
-  // Eliminar matrícula por ID
-  async eliminarMatricula(idMatricula) {
-    await pool.query("DELETE FROM Matricula WHERE idMatricula = ?", [idMatricula]);
+  // Eliminar matrícula por ID (soft delete)
+  async eliminarMatricula(idMatricula, idUsuarioAdmin) {
+    await pool.query(
+      "UPDATE Matricula SET fechaEliminacion = NOW(), eliminadoPor = ? WHERE idMatricula = ?",
+      [idUsuarioAdmin || null, idMatricula]
+    );
   }
 
   // Consultar matrícula con JOINs (alumno, apoderado, sección)
@@ -135,7 +138,7 @@ class Admin extends Usuario {
         JOIN Apoderado ap ON al.idApoderado = ap.idApoderado
         JOIN Usuario u ON ap.idUsuario = u.idUsuario
         JOIN Seccion s ON m.idSeccion = s.idSeccion
-        WHERE m.periodoAcademico = ?
+        WHERE m.periodoAcademico = ? AND m.fechaEliminacion IS NULL
         ORDER BY m.fechaRegistro DESC
       `, [periodo]);
       return rows;

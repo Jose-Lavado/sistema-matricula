@@ -1,7 +1,7 @@
 DROP DATABASE IF EXISTS sistema_matricula;
 CREATE DATABASE sistema_matricula;
 USE sistema_matricula;
-
+SET NAMES utf8mb4;
 -- =============================================
 -- TABLAS
 -- =============================================
@@ -11,7 +11,7 @@ CREATE TABLE Usuario(
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     correo VARCHAR(150) NOT NULL UNIQUE,
-    contraseña VARCHAR(255) NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     rol ENUM('ADMIN','APODERADO') NOT NULL,
     fechaRegistro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -70,6 +70,8 @@ CREATE TABLE Matricula(
     periodoAcademico YEAR NOT NULL,
     estado ENUM('PENDIENTE','APROBADA','RECHAZADA') DEFAULT 'PENDIENTE',
     fechaRegistro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fechaEliminacion TIMESTAMP NULL DEFAULT NULL,
+    eliminadoPor INT NULL DEFAULT NULL,
     CONSTRAINT fk_matricula_alumno
         FOREIGN KEY(idAlumno) REFERENCES Alumno(idAlumno)
         ON DELETE CASCADE ON UPDATE CASCADE,
@@ -106,7 +108,7 @@ CREATE TABLE Historial_Cambios(
 -- =============================================
 
 -- Contraseña de todos: "123456" (bcrypt)
-INSERT INTO Usuario(nombre, apellido, correo, contraseña, rol) VALUES
+INSERT INTO Usuario(nombre, apellido, correo, contrasena, rol) VALUES
 ('Lucas',   'Gonzales',       'lucas@gmail.com',  '$2b$10$XrOWuzpTtWBD1VFOzkopHehaL0iyj2fMlMDsJv0pzf6hJCX6F8Z32', 'ADMIN'),
 ('Ana',     'Torres',         'ana@gmail.com',    '$2b$10$XrOWuzpTtWBD1VFOzkopHehaL0iyj2fMlMDsJv0pzf6hJCX6F8Z32', 'ADMIN'),
 ('Maria',   'Torres Vega',    'maria@gmail.com',  '$2b$10$XrOWuzpTtWBD1VFOzkopHehaL0iyj2fMlMDsJv0pzf6hJCX6F8Z32', 'APODERADO'),
@@ -212,3 +214,18 @@ SET s.vacantes = s.capacidad - (
 );
 
 SET SQL_SAFE_UPDATES = 1;
+
+SELECT 
+    m.idMatricula,
+    CONCAT(al.nombre, ' ', al.apellido) AS alumno,
+    CONCAT(s.grado, ' - ', s.seccion) AS seccion,
+    m.periodoAcademico,
+    m.estado,
+    m.fechaRegistro,
+    m.fechaEliminacion,
+    CONCAT(u.nombre, ' ', u.apellido) AS eliminadoPor
+FROM Matricula m
+JOIN Alumno al ON m.idAlumno = al.idAlumno
+JOIN Seccion s ON m.idSeccion = s.idSeccion
+LEFT JOIN Usuario u ON m.eliminadoPor = u.idUsuario
+ORDER BY m.idMatricula;

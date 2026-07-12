@@ -1,237 +1,425 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reporte de Matrículas – I.E. Pedro Labarthe</title>
-    <!-- REPORTE: tabla de matrículas con exportación a PDF y Excel -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link href="/css/sidebar.css" rel="stylesheet" />
-    <link href="/css/app.css" rel="stylesheet" />
-    <link href="/css/feedback.css" rel="stylesheet" />
-    <link href="/css/reporte.css" rel="stylesheet" />
-  </head>
-  <body class="bg-light">
-    <script src="/js/guard.js"></script>
-    <div class="container-fluid">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reportes del Sistema – I.E. Pedro Labarthe</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;700&display=swap"
+    rel="stylesheet" />
+  <link href="/css/sidebar.css" rel="stylesheet" />
+  <link href="/css/app.css" rel="stylesheet" />
+  <link href="/css/feedback.css" rel="stylesheet" />
+  <link href="/css/reporte.css" rel="stylesheet" />
+</head>
+
+<body>
+  <script src="/js/guard.js"></script>
+  <div class="container-fluid">
     <div class="row min-vh-100">
       <div id="sidebar-container" class="col-auto p-0"></div>
 
-        <!-- ══════════ MAIN ══════════ -->
-        <main class="col p-0">
-          <!-- Topbar -->
-          <div
-            class="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center no-print"
-          >
-            <h4 class="playfair mb-0" style="color: #0a1628">
-              Reporte de Matrículas
-            </h4>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-light border text-secondary px-3 py-2">Periodo 2026</span>
-              <button class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-bell"></i>
+      <main class="col p-0">
+        <div id="topbar-container"></div>
+
+        <div class="page-body">
+
+          <ul class="nav nav-tabs tab-custom mb-4 border-bottom" id="reportesTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#r1" type="button">
+                <i class="bi bi-file-earmark-text me-1"></i> Matricula
               </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r2" type="button">
+                <i class="bi bi-person-gear me-1"></i> Productividad
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r4" type="button">
+                <i class="bi bi-trash me-1"></i> Eliminadas
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r5" type="button">
+                <i class="bi bi-bullseye me-1"></i> Cumplimiento
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#r6" type="button">
+                <i class="bi bi-door-open me-1"></i> Vacantes
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="reportesTabContent">
+
+            <!-- REPORTE 1: Matriculas por Periodo -->
+            <div class="tab-pane fade show active" id="r1">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Producto -
+                  Total de matriculas registradas</span>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Total</small>
+                        <h4 class="fw-bold mb-0" id="r1KpiTotal">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-primary bg-opacity-10"><i class="bi bi-file-text fs-5 text-primary"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Aprobadas</small>
+                        <h4 class="fw-bold text-success mb-0" id="r1KpiAprobadas">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-success bg-opacity-10"><i
+                          class="bi bi-check-circle fs-5 text-success"></i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Pendientes</small>
+                        <h4 class="fw-bold text-warning mb-0" id="r1KpiPendientes">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-warning bg-opacity-10"><i
+                          class="bi bi-hourglass-split fs-5 text-warning"></i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Rechazadas</small>
+                        <h4 class="fw-bold text-danger mb-0" id="r1KpiRechazadas">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-danger bg-opacity-10"><i class="bi bi-x-circle fs-5 text-danger"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                  <h5 class="section-title mb-0">Detalle de Matriculas</h5>
+                  <div class="d-flex gap-2 no-print">
+                    <button class="btn btn-outline-danger btn-sm" onclick="exportarPDF()"><i
+                        class="bi bi-filetype-pdf me-1"></i>PDF</button>
+                    <button class="btn btn-outline-success btn-sm" onclick="exportarExcel()"><i
+                        class="bi bi-filetype-xls me-1"></i>Excel</button>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0" id="tablaR1">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">N&#176;</th>
+                        <th>Alumno</th>
+                        <th>DNI</th>
+                        <th>Grado</th>
+                        <th>Seccion</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r1Body">
+                      <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="p-4 border-top d-flex justify-content-between align-items-center">
+                  <small class="text-muted" id="r1Info">Cargando...</small>
+                </div>
+              </div>
             </div>
+
+            <!-- REPORTE 2: Productividad del Personal -->
+            <div class="tab-pane fade" id="r2">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Eficiencia -
+                  Productividad del Personal</span>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Total Matriculas</small>
+                        <h4 class="fw-bold mb-0" id="r2KpiTotal">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-primary bg-opacity-10"><i class="bi bi-file-text fs-5 text-primary"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">N&#176;
+                          Administradores</small>
+                        <h4 class="fw-bold text-info mb-0" id="r2KpiAdmins">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-info bg-opacity-10"><i class="bi bi-people fs-5 text-info"></i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Productividad</small>
+                        <h4 class="fw-bold text-success mb-0" id="r2KpiProductividad">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-success bg-opacity-10"><i
+                          class="bi bi-speedometer2 fs-5 text-success"></i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Prom. por Admin</small>
+                        <h4 class="fw-bold text-warning mb-0" id="r2KpiPromedio">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-warning bg-opacity-10"><i class="bi bi-calculator fs-5 text-warning"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-header bg-white border-0 p-4">
+                  <h5 class="section-title mb-0">Detalle por Administrador</h5>
+                </div>
+                <div class="card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">Administrador</th>
+                        <th>Registradas</th>
+                        <th>Aprobadas</th>
+                        <th>Pendientes</th>
+                        <th>Rechazadas</th>
+                        <th>% Exito</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r2Body">
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- REPORTE 4: Matriculas Eliminadas -->
+            <div class="tab-pane fade" id="r4">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Eliminaciones logicas del
+                  sistema</span>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6 col-md-4">
+                  <div class="card kpi-card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                      <div><small class="text-muted text-uppercase" style="font-size:0.7rem">Total Eliminadas</small>
+                        <h4 class="fw-bold text-danger mb-0" id="r4KpiTotal">-</h4>
+                      </div>
+                      <div class="kpi-icon bg-danger bg-opacity-10"><i class="bi bi-trash fs-5 text-danger"></i></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Alumno</th>
+                        <th>Estado Anterior</th>
+                        <th>Fecha Registro</th>
+                        <th>Fecha Eliminacion</th>
+                        <th>Eliminado Por</th>
+                        <th class="no-print">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r4Body">
+                      <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- REPORTE 5: Cumplimiento de Matriculas -->
+            <div class="tab-pane fade" id="r5">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Indicador de Eficacia -
+                  Matriculas realizadas vs capacidad total</span>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">Realizadas</small>
+                      <h2 class="fw-bold text-success mb-0" id="r5Realizadas">-</h2><small class="text-muted">matriculas
+                        aprobadas</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">Capacidad Total</small>
+                      <h2 class="fw-bold text-primary mb-0" id="r5Capacidad">-</h2><small class="text-muted">matriculas
+                        esperadas</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">% Cumplimiento</small>
+                      <h2 class="fw-bold text-warning mb-0" id="r5Porcentaje">-</h2><small
+                        class="text-muted">global</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-header bg-white border-0 p-4">
+                  <h5 class="section-title mb-0">Cumplimiento por Grado</h5>
+                </div>
+                <div class="card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">Grado</th>
+                        <th>Realizadas</th>
+                        <th>Capacidad</th>
+                        <th>% Cumplimiento</th>
+                        <th>Observacion</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r5Body">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- REPORTE 6: Vacantes y Ocupacion -->
+            <div class="tab-pane fade" id="r6">
+              <div class="filter-bar d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-dark px-3 py-2"><i class="bi bi-info-circle me-1"></i>Disponibilidad de vacantes
+                  por seccion</span>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">Total Capacidad</small>
+                      <h4 class="fw-bold mb-0" id="r6TotalCap">-</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">Disponibles</small>
+                      <h4 class="fw-bold text-success mb-0" id="r6Disponibles">-</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">Ocupadas</small>
+                      <h4 class="fw-bold text-primary mb-0" id="r6Ocupadas">-</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card kpi-card">
+                    <div class="card-body text-center"><small class="text-muted text-uppercase"
+                        style="font-size:0.7rem">% Ocupacion</small>
+                      <h4 class="fw-bold text-warning mb-0" id="r6Porcentaje">-</h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card card-report">
+                <div class="card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th class="ps-4">Grado</th>
+                        <th>Seccion</th>
+                        <th>Capacidad</th>
+                        <th>Disponibles</th>
+                        <th>Ocupadas</th>
+                        <th>% Ocupacion</th>
+                      </tr>
+                    </thead>
+                    <tbody id="r6Body">
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Cargando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
           </div>
+        </div>
+      </main>
+    </div>
+  </div>
 
-          <!-- ══════════ ÁREA QUE SE IMPRIME ══════════ -->
-          <div id="areaPDF" class="p-4">
-            <!-- Cabecera solo visible en PDF -->
-            <div
-              class="pdf-header d-none align-items-center gap-3 mb-4 pb-3 border-bottom"
-            >
-              <div>
-                <h4 class="playfair fw-bold mb-0" style="color: #0a1628">
-                  I.E. Pedro Labarthe
-                </h4>
-                <p class="text-muted mb-0" style="font-size: 0.85rem">
-                  Sistema de Matrícula — Periodo 2026
-                </p>
-              </div>
-              <div class="ms-auto text-end">
-                <h5 class="playfair mb-0" style="color: #0a1628">
-                  Reporte de Matrículas
-                </h5>
-                <small class="text-muted"
-                  >Generado el: <span id="fechaGenerado"></span
-                ></small>
-              </div>
-            </div>
-
-            <!-- KPIs -->
-            <div class="row g-3 mb-4">
-              <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4">
-                  <div
-                    class="card-body d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <small
-                        class="text-muted text-uppercase"
-                        style="font-size: 0.72rem"
-                        >Total matrículas</small
-                      >
-                      <h3 class="fw-bold mb-0" id="kpiTotal">—</h3>
-                    </div>
-                    <div
-                      class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                      style="width: 52px; height: 52px"
-                    >
-                      <i class="bi bi-file-earmark-text fs-4 text-primary"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4">
-                  <div
-                    class="card-body d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <small
-                        class="text-muted text-uppercase"
-                        style="font-size: 0.72rem"
-                        >Aprobadas</small
-                      >
-                      <h3 class="fw-bold text-success mb-0" id="kpiAprobadas">—</h3>
-                    </div>
-                    <div
-                      class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                      style="width: 52px; height: 52px"
-                    >
-                      <i class="bi bi-check-circle fs-4 text-success"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4">
-                  <div
-                    class="card-body d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <small
-                        class="text-muted text-uppercase"
-                        style="font-size: 0.72rem"
-                        >Pendientes</small
-                      >
-                      <h3 class="fw-bold text-warning mb-0" id="kpiPendientes">—</h3>
-                    </div>
-                    <div
-                      class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                      style="width: 52px; height: 52px"
-                    >
-                      <i class="bi bi-hourglass-split fs-4 text-warning"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4">
-                  <div
-                    class="card-body d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <small
-                        class="text-muted text-uppercase"
-                        style="font-size: 0.72rem"
-                        >Rechazadas</small
-                      >
-                      <h3 class="fw-bold text-danger mb-0" id="kpiRechazadas">—</h3>
-                    </div>
-                    <div
-                      class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                      style="width: 52px; height: 52px"
-                    >
-                      <i class="bi bi-x-circle fs-4 text-danger"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tabla -->
-            <div class="card border-0 shadow-sm rounded-4">
-              <div
-                class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center"
-              >
-                <h5 class="playfair mb-0">Detalle de Matrículas</h5>
-                <div class="d-flex gap-2 no-print">
-                  <button
-                    class="btn btn-outline-danger btn-sm"
-                    onclick="exportarPDF()"
-                  >
-                    <i class="bi bi-filetype-pdf me-1"></i>PDF
-                  </button>
-                  <button
-                    class="btn btn-outline-success btn-sm"
-                    onclick="exportarExcel()"
-                  >
-                    <i class="bi bi-filetype-xls me-1"></i>Excel
-                  </button>
-                </div>
-              </div>
-
-              <div class="table-responsive">
-                <table class="table align-middle mb-0" id="tablaReporte">
-                  <thead class="table-light">
-                    <tr>
-                      <th class="ps-4">N°</th>
-                      <th>Alumno</th>
-                      <th>DNI</th>
-                      <th>Grado</th>
-                      <th>Sección</th>
-                      <th>Estado</th>
-                      <th>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody id="reporteBody">
-                    <tr><td colspan="7" class="text-center text-muted py-4">Cargando...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div
-                class="p-4 border-top d-flex justify-content-between align-items-center flex-wrap gap-2"
-              >
-                <small class="text-muted" id="infoRegistros">Cargando...</small>
-                <nav class="no-print">
-                  <ul class="pagination pagination-sm mb-0" id="paginacionReporte">
-                    <li class="page-item disabled"><a class="page-link text-dark bg-light border-secondary-subtle">«</a></li>
-                    <li class="page-item active"><a class="page-link bg-dark border-dark text-white">1</a></li>
-                    <li class="page-item disabled"><a class="page-link text-dark bg-light border-secondary-subtle">»</a></li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
-          </div>
-          <!-- /areaPDF -->
-        </main>
+  <!-- Modal confirmar accion en Reporte 4 -->
+  <div class="modal fade" id="r4ConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4">
+        <div class="modal-body text-center p-4">
+          <i class="bi bi-exclamation-triangle text-warning" style="font-size:2.5rem"></i>
+          <p class="mb-0 mt-3 fw-semibold" id="r4ConfirmMsg">¿Confirmar accion?</p>
+        </div>
+        <div class="modal-footer justify-content-center border-0 pt-0">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm btn-danger" id="r4ConfirmBtn">Confirmar</button>
+        </div>
       </div>
     </div>
+  </div>
 
-<!-- jsPDF -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/ui.js"></script>
-<script src="/js/utils.js"></script>
-<script src="/js/reporte.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/reporte.js"></script>
   <script src="/js/feedback.js"></script>
   <script src="/js/notification.js"></script>
-  </body>
+</body>
+
 </html>

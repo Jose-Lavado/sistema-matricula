@@ -1,9 +1,31 @@
-#tablaReporte thead th {
+:root { --primary: #0a1628; --accent: #4472C4; }
+.playfair { font-family: 'Georgia', serif; }
+
+/* Tabs */
+.tab-custom .nav-link { color: #6c757d; border: none; border-bottom: 3px solid transparent; font-weight: 500; transition: all 0.2s; }
+.tab-custom .nav-link.active { color: var(--primary); border-bottom-color: var(--accent); background: transparent; font-weight: 700; }
+.tab-custom .nav-link:hover { color: var(--primary); }
+
+/* Cards */
+.card-report { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.kpi-card { border: none; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+
+/* Filter bar */
+.filter-bar { background: white; border-radius: 10px; padding: 12px 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }
+
+/* Badge */
+.badge-estado { font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; }
+
+/* Table */
+.section-title { color: var(--primary); font-weight: 700; }
+#tablaR1 thead th {
   font-size: .75rem;
   text-transform: uppercase;
   letter-spacing: .07em;
 }
 
+/* Print / PDF */
 @media print {
   body * { visibility: hidden; }
   #areaPDF, #areaPDF * { visibility: visible; }

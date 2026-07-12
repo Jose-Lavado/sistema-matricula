@@ -75,21 +75,24 @@ class Matricula {
     this.idSeccion = nuevoIdSeccion;
   }
 
-  async eliminar(idMatricula) {
+  async eliminar(idMatricula, idUsuarioAdmin) {
     const [rows] = await pool.query(
-      "SELECT estado, idAlumno, idUsuario FROM Matricula WHERE idMatricula = ?", [idMatricula]
+      "SELECT estado, idAlumno, idUsuario FROM Matricula WHERE idMatricula = ? AND fechaEliminacion IS NULL", [idMatricula]
     );
     if (rows.length === 0) throw new Error("Matrícula no encontrada.");
     if (rows[0].estado === "APROBADA") {
       throw new Error("No se puede eliminar una matrícula con estado APROBADA.");
     }
-    const { idAlumno, idUsuario } = rows[0];
+    const { idAlumno } = rows[0];
 
     const [alumno] = await pool.query(
       "SELECT nombre, apellido, idApoderado FROM Alumno WHERE idAlumno = ?", [idAlumno]
     );
 
-    await pool.query("DELETE FROM Matricula WHERE idMatricula = ?", [idMatricula]);
+    await pool.query(
+      "UPDATE Matricula SET fechaEliminacion = NOW(), eliminadoPor = ? WHERE idMatricula = ?",
+      [idUsuarioAdmin || null, idMatricula]
+    );
 
     if (alumno.length) {
       const [apo] = await pool.query(
@@ -100,6 +103,25 @@ class Matricula {
         idUsuarioApoderado: apo.length ? apo[0].idUsuario : null,
       });
     }
+  }
+
+  async restaurar(idMatricula) {
+    const [rows] = await pool.query(
+      "SELECT idMatricula FROM Matricula WHERE idMatricula = ? AND fechaEliminacion IS NOT NULL", [idMatricula]
+    );
+    if (rows.length === 0) throw new Error("Matrícula no encontrada o no está eliminada.");
+    await pool.query(
+      "UPDATE Matricula SET fechaEliminacion = NULL, eliminadoPor = NULL WHERE idMatricula = ?",
+      [idMatricula]
+    );
+  }
+
+  async eliminarFisicamente(idMatricula) {
+    const [rows] = await pool.query(
+      "SELECT idMatricula FROM Matricula WHERE idMatricula = ? AND fechaEliminacion IS NOT NULL", [idMatricula]
+    );
+    if (rows.length === 0) throw new Error("Matrícula no encontrada o no está eliminada.");
+    await pool.query("DELETE FROM Matricula WHERE idMatricula = ?", [idMatricula]);
   }
 
   static async consultar(idMatricula) {
@@ -198,6 +220,7 @@ class Matricula {
     if (filtros.fecha) { where.push("DATE(m.fechaRegistro) = ?"); params.push(filtros.fecha); }
     if (filtros.alumno_id) { where.push("m.idAlumno = ?"); params.push(filtros.alumno_id); }
     if (filtros.anio) { where.push("m.periodoAcademico = ?"); params.push(filtros.anio); }
+    if (!filtros.incluirEliminadas) { where.push("m.fechaEliminacion IS NULL"); }
 
     const whereClause = where.length ? "WHERE " + where.join(" AND ") : "";
     const dir = filtros.order && filtros.order.toUpperCase() === "ASC" ? "ASC" : "DESC";
@@ -216,16 +239,72 @@ class Matricula {
     return { data: rows, totalPages };
   }
 
-  static async getStats() {
+  static async getStats(periodo) {
+    const anio = periodo || new Date().getFullYear();
     const [rows] = await pool.query(`
       SELECT
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'APROBADA' AND periodoAcademico = YEAR(CURDATE())) AS total_matriculas,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'APROBADA' AND periodoAcademico = YEAR(CURDATE())) AS aprobadas,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'PENDIENTE' AND periodoAcademico = YEAR(CURDATE())) AS pendientes,
-        (SELECT COUNT(*) FROM Matricula WHERE estado = 'RECHAZADA' AND periodoAcademico = YEAR(CURDATE())) AS rechazadas,
-        (SELECT COUNT(DISTINCT idAlumno) FROM Matricula WHERE periodoAcademico = YEAR(CURDATE())) AS total_alumnos
-    `);
+        (SELECT COUNT(*) FROM Matricula WHERE estado IN ('APROBADA','PENDIENTE','RECHAZADA') AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS total_matriculas,
+        (SELECT COUNT(*) FROM Matricula WHERE estado = 'APROBADA' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS aprobadas,
+        (SELECT COUNT(*) FROM Matricula WHERE estado = 'PENDIENTE' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS pendientes,
+        (SELECT COUNT(*) FROM Matricula WHERE estado = 'RECHAZADA' AND periodoAcademico = ? AND fechaEliminacion IS NULL) AS rechazadas,
+        (SELECT COUNT(DISTINCT idAlumno) FROM Matricula WHERE periodoAcademico = ? AND fechaEliminacion IS NULL) AS total_alumnos
+    `, [anio, anio, anio, anio, anio]);
     return rows[0];
+  }
+
+  static async getEliminadas(periodo) {
+    const [rows] = await pool.query(`
+      SELECT m.idMatricula,
+             CONCAT(al.nombre, ' ', al.apellido) AS alumno,
+             m.estado AS estadoAnterior,
+             m.fechaRegistro,
+             m.fechaEliminacion,
+             CONCAT(u.nombre, ' ', u.apellido) AS eliminadoPorNombre
+      FROM Matricula m
+      JOIN Alumno al ON m.idAlumno = al.idAlumno
+      LEFT JOIN Usuario u ON m.eliminadoPor = u.idUsuario
+      WHERE m.fechaEliminacion IS NOT NULL
+        AND m.periodoAcademico = ?
+      ORDER BY m.fechaEliminacion DESC
+    `, [periodo]);
+    return rows;
+  }
+
+  static async getProductividad(periodo) {
+    const [rows] = await pool.query(`
+      SELECT u.idUsuario,
+             CONCAT(u.nombre, ' ', u.apellido) AS admin,
+             COUNT(DISTINCT hc.idMatricula) AS total,
+             SUM(CASE WHEN m.estado = 'APROBADA' THEN 1 ELSE 0 END) AS aprobadas,
+             SUM(CASE WHEN m.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS pendientes,
+             SUM(CASE WHEN m.estado = 'RECHAZADA' THEN 1 ELSE 0 END) AS rechazadas
+      FROM Usuario u
+      LEFT JOIN Historial_Cambios hc ON hc.idUsuario = u.idUsuario
+      LEFT JOIN Matricula m ON m.idMatricula = hc.idMatricula
+        AND m.periodoAcademico = ?
+        AND m.fechaEliminacion IS NULL
+      WHERE u.rol = 'ADMIN'
+      GROUP BY u.idUsuario
+      ORDER BY total DESC
+    `, [periodo]);
+    return rows;
+  }
+
+  static async getCumplimiento(periodo) {
+    const [rows] = await pool.query(`
+      SELECT s.grado,
+             COUNT(m.idMatricula) AS realizadas,
+             SUM(s.capacidad) AS capacidad,
+             ROUND(COUNT(m.idMatricula) / SUM(s.capacidad) * 100, 1) AS porcentaje
+      FROM Seccion s
+      LEFT JOIN Matricula m ON s.idSeccion = m.idSeccion
+        AND m.estado = 'APROBADA'
+        AND m.fechaEliminacion IS NULL
+        AND m.periodoAcademico = ?
+      GROUP BY s.grado
+      ORDER BY s.grado
+    `, [periodo]);
+    return rows;
   }
 }
 

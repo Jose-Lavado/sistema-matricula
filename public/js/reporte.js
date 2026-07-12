@@ -1,4 +1,4 @@
-// reporte.js — cargar reporte, exportar a PDF (jsPDF) y Excel (SheetJS)
+// reporte.js — cargar 6 reportes por tabs, filtros, acciones (soft delete), exportar PDF/Excel
 fetch("/components/sidebar.html")
   .then(r => r.text())
   .then(html => {
@@ -8,51 +8,249 @@ fetch("/components/sidebar.html")
     document.body.appendChild(s);
   });
 
-const ESTADOS = { APROBADA: "bg-success", PENDIENTE: "bg-warning text-dark", RECHAZADA: "bg-danger" };
-
-document.getElementById("fechaGenerado").textContent =
-  new Date().toLocaleDateString("es-PE", {
-    day: "2-digit", month: "long", year: "numeric",
+fetch("/components/topbar.html")
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById("topbar-container").innerHTML = html;
+    document.getElementById("topbarTitle").textContent = "Reportes del Sistema";
   });
 
-async function cargarReporte() {
-  try {
-    const stats = await apiFetch("/reportes/stats");
-    if (stats) {
-      document.getElementById("kpiTotal").textContent = stats.total_matriculas || 0;
-      document.getElementById("kpiAprobadas").textContent = stats.aprobadas || 0;
-      document.getElementById("kpiPendientes").textContent = stats.pendientes || 0;
-      document.getElementById("kpiRechazadas").textContent = stats.rechazadas || 0;
-    }
+const ESTADOS = { APROBADA: "bg-success", PENDIENTE: "bg-warning text-dark", RECHAZADA: "bg-danger" };
 
-    const data = await apiFetch("/reportes/matriculas?periodo=2026");
-    const tbody = document.getElementById("reporteBody");
+// ==================== REPORTE 1: Por Periodo ====================
+async function cargarR1() {
+  const periodo = new Date().getFullYear();
+  try {
+    const [stats, data] = await Promise.all([
+      apiFetch("/reportes/stats?periodo=" + periodo),
+      apiFetch("/reportes/matriculas?periodo=" + periodo)
+    ]);
+    if (stats) {
+      document.getElementById("r1KpiTotal").textContent = stats.total_matriculas || 0;
+      document.getElementById("r1KpiAprobadas").textContent = stats.aprobadas || 0;
+      document.getElementById("r1KpiPendientes").textContent = stats.pendientes || 0;
+      document.getElementById("r1KpiRechazadas").textContent = stats.rechazadas || 0;
+    }
+    const tbody = document.getElementById("r1Body");
     if (data && data.length) {
       tbody.innerHTML = data.map((r, i) => {
         const idx = String(i + 1).padStart(3, "0");
         const badge = ESTADOS[r.estado] || "bg-secondary";
         return `<tr>
           <td class="ps-4 text-muted">${idx}</td>
-          <td class="fw-medium">${r.alumno || "—"}</td>
-          <td>${r.dni || "—"}</td>
-          <td>${r.grado || "—"}</td>
-          <td>${r.seccion || "—"}</td>
-          <td><span class="badge ${badge} px-3">${r.estado || "—"}</span></td>
-          <td>${r.fechaRegistro ? new Date(r.fechaRegistro).toLocaleDateString("es-PE") : "—"}</td>
+          <td class="fw-medium">${r.alumno || "-"}</td>
+          <td>${r.dni || "-"}</td>
+          <td>${r.grado || "-"}</td>
+          <td>${r.seccion || "-"}</td>
+          <td><span class="badge ${badge} px-3 badge-estado">${r.estado || "-"}</span></td>
+          <td>${r.fechaRegistro ? new Date(r.fechaRegistro).toLocaleDateString("es-PE") : "-"}</td>
         </tr>`;
       }).join("");
-      document.getElementById("infoRegistros").textContent =
-        "Página 1 de 1";
+      document.getElementById("r1Info").textContent = data.length + " registros - Pagina 1 de 1";
     } else {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No hay datos disponibles</td></tr>';
-      document.getElementById("infoRegistros").textContent = "Página 0 de 0";
+      document.getElementById("r1Info").textContent = "0 registros";
     }
   } catch (e) {
-    console.error("Error cargando reporte:", e);
-    showErrorAlert("Error al cargar los datos del reporte.");
+    console.error("Error R1:", e);
+    showErrorAlert("Error al cargar Reporte 1.");
   }
 }
 
+// ==================== REPORTE 2: Productividad del Personal ====================
+async function cargarR2() {
+  const periodo = new Date().getFullYear();
+  try {
+    const result = await apiFetch("/reportes/productividad?periodo=" + periodo);
+    if (result) {
+      document.getElementById("r2KpiTotal").textContent = result.totalMatriculas || 0;
+      document.getElementById("r2KpiAdmins").textContent = result.totalAdmins || 0;
+      document.getElementById("r2KpiProductividad").textContent = result.productividad || 0;
+      document.getElementById("r2KpiPromedio").textContent = result.productividad || 0;
+
+      const tbody = document.getElementById("r2Body");
+      if (result.data && result.data.length) {
+        tbody.innerHTML = result.data.map(r => {
+          const total = Number(r.total);
+          const aprobadas = Number(r.aprobadas);
+          const pct = total > 0 ? ((aprobadas / total) * 100).toFixed(1) : 0;
+          return `<tr>
+            <td class="ps-4 fw-semibold">${r.admin}</td>
+            <td>${total}</td>
+            <td class="text-success fw-semibold">${r.aprobadas}</td>
+            <td class="text-warning fw-semibold">${r.pendientes}</td>
+            <td class="text-danger fw-semibold">${r.rechazadas}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height:20px; max-width:100px">
+                  <div class="progress-bar ${pct >= 70 ? 'bg-success' : pct >= 40 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%">${pct}%</div>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        }).join("");
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay datos de productividad</td></tr>';
+      }
+    }
+  } catch (e) {
+    console.error("Error R2:", e);
+    showErrorAlert("Error al cargar Reporte 2.");
+  }
+}
+
+// ==================== REPORTE 4: Eliminadas ====================
+async function cargarR4() {
+  try {
+    const data = await apiFetch("/reportes/eliminadas?periodo=" + new Date().getFullYear());
+    const tbody = document.getElementById("r4Body");
+    document.getElementById("r4KpiTotal").textContent = data ? data.length : 0;
+    if (data && data.length) {
+      tbody.innerHTML = data.map(r => {
+        const badge = ESTADOS[r.estadoAnterior] || "bg-secondary";
+        const fechaReg = r.fechaRegistro ? new Date(r.fechaRegistro).toLocaleDateString("es-PE") : "-";
+        const fechaElim = r.fechaEliminacion ? new Date(r.fechaEliminacion).toLocaleString("es-PE") : "-";
+        return `<tr>
+          <td class="ps-4 text-muted">${r.idMatricula}</td>
+          <td class="fw-medium">${r.alumno || "-"}</td>
+          <td><span class="badge ${badge} badge-estado">${r.estadoAnterior || "-"}</span></td>
+          <td>${fechaReg}</td>
+          <td>${fechaElim}</td>
+          <td>${r.eliminadoPorNombre || "-"}</td>
+          <td class="no-print">
+            <div class="d-flex justify-content-center gap-1">
+              <button class="btn btn-sm btn-outline-success" title="Restaurar" onclick="restaurarMatricula(${r.idMatricula})"><i class="bi bi-arrow-counterclockwise"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Eliminar permanentemente" onclick="eliminarPermanentemente(${r.idMatricula})"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No hay matriculas eliminadas</td></tr>';
+    }
+  } catch (e) {
+    console.error("Error R4:", e);
+    showErrorAlert("Error al cargar Reporte 4.");
+  }
+}
+
+async function restaurarMatricula(id) {
+  document.getElementById("r4ConfirmMsg").textContent = "¿Restaurar esta matrícula? Volverá a aparecer en los reportes activos.";
+  document.getElementById("r4ConfirmBtn").className = "btn btn-sm btn-success";
+  document.getElementById("r4ConfirmBtn").onclick = async function () {
+    const res = await apiFetch("/matriculas/" + id + "/restaurar", { method: "PUT" });
+    if (res && !res.error) {
+      bootstrap.Modal.getInstance(document.getElementById("r4ConfirmModal")).hide();
+      showSuccessAlert("Matrícula restaurada correctamente.");
+      cargarR4();
+    } else {
+      showErrorAlert(res?.error || "Error al restaurar");
+    }
+  };
+  new bootstrap.Modal(document.getElementById("r4ConfirmModal")).show();
+}
+
+async function eliminarPermanentemente(id) {
+  document.getElementById("r4ConfirmMsg").textContent = "¿Eliminar permanentemente? Esta acción NO se puede deshacer.";
+  document.getElementById("r4ConfirmBtn").className = "btn btn-sm btn-danger";
+  document.getElementById("r4ConfirmBtn").onclick = async function () {
+    const res = await apiFetch("/matriculas/" + id + "/permanente", { method: "DELETE" });
+    if (res && !res.error) {
+      bootstrap.Modal.getInstance(document.getElementById("r4ConfirmModal")).hide();
+      showSuccessAlert("Matrícula eliminada permanentemente.");
+      cargarR4();
+    } else {
+      showErrorAlert(res?.error || "Error al eliminar");
+    }
+  };
+  new bootstrap.Modal(document.getElementById("r4ConfirmModal")).show();
+}
+
+// ==================== REPORTE 5: Estadisticas ====================
+async function cargarR5() {
+  try {
+    const result = await apiFetch("/reportes/cumplimiento?periodo=" + new Date().getFullYear());
+    if (result) {
+      document.getElementById("r5Realizadas").textContent = result.totalRealizadas || 0;
+      document.getElementById("r5Capacidad").textContent = result.totalCapacidad || 0;
+      document.getElementById("r5Porcentaje").textContent = (result.porcentajeGlobal || 0) + "%";
+      const tbody = document.getElementById("r5Body");
+      if (result.data && result.data.length) {
+        tbody.innerHTML = result.data.map(r => {
+          const pct = Number(r.porcentaje);
+          let obs = "";
+          if (pct >= 80) obs = '<span class="badge bg-success">Sobresaliente</span>';
+          else if (pct >= 50) obs = '<span class="badge bg-warning text-dark">Aceptable</span>';
+          else obs = '<span class="badge bg-danger">Insuficiente</span>';
+          return `<tr>
+            <td class="ps-4 fw-semibold">${r.grado}</td>
+            <td class="fw-bold text-success">${r.realizadas}</td>
+            <td>${r.capacidad}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height:20px;max-width:120px">
+                  <div class="progress-bar ${pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger'}" style="width:${pct}%">${pct}%</div>
+                </div>
+              </div>
+            </td>
+            <td>${obs}</td>
+          </tr>`;
+        }).join("");
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay datos disponibles</td></tr>';
+      }
+    }
+  } catch (e) {
+    console.error("Error R5:", e);
+    showErrorAlert("Error al cargar Reporte 5.");
+  }
+}
+
+// ==================== REPORTE 6: Vacantes ====================
+async function cargarR6() {
+  try {
+    const data = await apiFetch("/reportes/vacantes");
+    if (data && data.totales) {
+      const t = data.totales;
+      const ocupPct = t.total_vacantes > 0 ? ((t.ocupadas / t.total_vacantes) * 100).toFixed(1) : 0;
+      document.getElementById("r6TotalCap").textContent = t.total_vacantes || 0;
+      document.getElementById("r6Disponibles").textContent = t.disponibles || 0;
+      document.getElementById("r6Ocupadas").textContent = t.ocupadas || 0;
+      document.getElementById("r6Porcentaje").textContent = ocupPct + "%";
+    }
+    const tbody = document.getElementById("r6Body");
+    if (data && data.secciones && data.secciones.length) {
+      tbody.innerHTML = data.secciones.map(s => {
+        const pct = s.capacidad > 0 ? ((s.ocupadas / s.capacidad) * 100).toFixed(1) : 0;
+        let barClass = "bg-primary";
+        if (pct >= 80) barClass = "bg-danger";
+        else if (pct >= 60) barClass = "bg-warning";
+        return `<tr>
+          <td class="ps-4 fw-semibold">${s.grado}</td>
+          <td>${s.seccion}</td>
+          <td>${s.capacidad}</td>
+          <td class="text-success fw-semibold">${s.vacantes}</td>
+          <td>${s.ocupadas}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height:20px; max-width:120px">
+                <div class="progress-bar ${barClass}" style="width:${pct}%">${pct}%</div>
+              </div>
+              <small class="text-muted">${pct}%</small>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay datos disponibles</td></tr>';
+    }
+  } catch (e) {
+    console.error("Error R6:", e);
+    showErrorAlert("Error al cargar Reporte 6.");
+  }
+}
+
+// ==================== EXPORTAR PDF (Reporte 1) ====================
 async function exportarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF("p", "mm", "a4");
@@ -73,35 +271,17 @@ async function exportarPDF() {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(80);
-  doc.text("Institución Educativa Pedro Labarthe", 37, 18);
-  doc.text("Sistema de Gestión de Matrículas", 37, 22);
+  doc.text("Institucion Educativa Pedro Labarthe", 37, 18);
+  doc.text("Sistema de Gestion de Matriculas", 37, 22);
 
   doc.setTextColor(...azul);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  doc.text("Reporte de Matrículas", 105, 17, { align: "center" });
+  doc.text("Reporte de Matriculas", 105, 17, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
   doc.setTextColor(60);
-  doc.text("Periodo Académico 2026", 105, 24, { align: "center" });
-
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.rect(148, 8, 48, 24);
-  doc.setFontSize(7.5);
-  doc.setTextColor(40);
-  doc.setFont("helvetica", "bold");
-  doc.text("Fecha:", 151, 14);
-  doc.text("Generado por:", 151, 18.5);
-  doc.text("Cargo:", 151, 23);
-  doc.text("Periodo:", 151, 27.5);
-  doc.setFont("helvetica", "normal");
-
-  const user = JSON.parse(sessionStorage.getItem("user") || "{}");
-  doc.text(new Date().toLocaleDateString("es-PE"), 168, 14);
-  doc.text(user.name || "—", 168, 18.5);
-  doc.text(user.role || "—", 168, 23);
-  doc.text("2026", 168, 27.5);
+  doc.text("Periodo Academico 2026", 105, 24, { align: "center" });
 
   doc.setDrawColor(180);
   doc.setLineWidth(0.4);
@@ -112,29 +292,28 @@ async function exportarPDF() {
   doc.setFontSize(11);
   doc.text("1. RESUMEN GENERAL", 14, 43);
 
-  showNotification("loading", "Exportando PDF...", "Generando el documento, por favor espera.", 0);
+  showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
   const stats = await apiFetch("/reportes/stats") || {};
   const resumen = [
-    { titulo: "TOTAL MATRÍCULAS", valor: String(stats.total_matriculas || 0), bg: [10, 22, 40], vBg: [184, 198, 224] },
-    { titulo: "APROBADAS",        valor: String(stats.aprobadas || 0),        bg: [10, 22, 40], vBg: [197, 220, 197] },
-    { titulo: "PENDIENTES",       valor: String(stats.pendientes || 0),       bg: [10, 22, 40], vBg: [232, 221, 184] },
-    { titulo: "RECHAZADAS",       valor: String(stats.rechazadas || 0),       bg: [10, 22, 40], vBg: [225, 195, 198] },
+    { titulo: "TOTAL", valor: String(stats.total_matriculas || 0) },
+    { titulo: "APROBADAS", valor: String(stats.aprobadas || 0) },
+    { titulo: "PENDIENTES", valor: String(stats.pendientes || 0) },
+    { titulo: "RECHAZADAS", valor: String(stats.rechazadas || 0) },
   ];
 
   const colW = 45.5;
   let rx = 14;
   const ry = 47;
   resumen.forEach((card) => {
-    doc.setFillColor(...card.bg);
+    doc.setFillColor(10, 22, 40);
     doc.rect(rx, ry, colW, 9, "F");
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.text(card.titulo, rx + colW / 2, ry + 5.8, { align: "center" });
-    doc.setFillColor(...card.vBg);
+    doc.setFillColor(184, 198, 224);
     doc.rect(rx, ry + 9, colW, 12, "F");
     doc.setTextColor(40);
-    doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.text(card.valor, rx + colW / 2, ry + 17, { align: "center" });
     rx += colW;
@@ -143,41 +322,24 @@ async function exportarPDF() {
   doc.setTextColor(...azul);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("2. DETALLE DE MATRÍCULAS", 14, 76);
+  doc.text("2. DETALLE DE MATRICULAS", 14, 76);
 
   const filas = [];
-  document.querySelectorAll("#tablaReporte tbody tr").forEach((tr) => {
+  document.querySelectorAll("#tablaR1 tbody tr").forEach((tr) => {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 7) {
-      filas.push([
-        tds[0].innerText.trim(), tds[1].innerText.trim(),
-        tds[2].innerText.trim(), tds[3].innerText.trim(),
-        tds[4].innerText.trim(), tds[5].innerText.trim(),
-        tds[6].innerText.trim(),
-      ]);
+      filas.push(Array.from(tds).map(td => td.innerText.trim()));
     }
   });
 
   doc.autoTable({
     startY: 80,
-    head: [["N°", "Alumno", "DNI", "Grado", "Sección", "Estado", "Fecha"]],
+    head: [["N\u00b0", "Alumno", "DNI", "Grado", "Seccion", "Estado", "Fecha"]],
     body: filas,
     theme: "grid",
-    headStyles: {
-      fillColor: azul, textColor: 255, halign: "center",
-      valign: "middle", fontStyle: "bold", fontSize: 8.5,
-    },
+    headStyles: { fillColor: azul, textColor: 255, halign: "center", fontStyle: "bold", fontSize: 8.5 },
     styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: 40 },
     alternateRowStyles: { fillColor: gris },
-    columnStyles: {
-      0: { halign: "center", cellWidth: 12 },
-      1: { cellWidth: 45 },
-      2: { halign: "center", cellWidth: 28 },
-      3: { cellWidth: 35 },
-      4: { halign: "center", cellWidth: 18 },
-      5: { halign: "center", cellWidth: 25 },
-      6: { halign: "center", cellWidth: 23 },
-    },
   });
 
   const paginas = doc.internal.getNumberOfPages();
@@ -185,27 +347,28 @@ async function exportarPDF() {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`Página ${i} de ${paginas}`, 105, 290, { align: "center" });
+    doc.text("Pagina " + i + " de " + paginas, 105, 290, { align: "center" });
   }
   doc.save("Reporte_Matriculas_2026.pdf");
-  document.querySelectorAll('.notif-stack .notif').forEach(function(d) {
-    if (typeof removeNotification === 'function') removeNotification(d);
+  document.querySelectorAll(".notif-stack .notif").forEach(function(d) {
+    if (typeof removeNotification === "function") removeNotification(d);
     else d.remove();
   });
   showSuccessAlert("PDF exportado correctamente.");
 }
 
+// ==================== EXPORTAR EXCEL (Reporte 1) ====================
 function exportarExcel() {
   const wb = XLSX.utils.book_new();
   const data = [
-    ["REPORTE DE MATRÍCULAS"],
+    ["REPORTE DE MATRICULAS"],
     ["I.E. PEDRO LABARTHE"],
-    ["Periodo Académico 2026"],
+    ["Periodo Academico 2026"],
     [],
-    ["N°", "Alumno", "DNI", "Grado", "Sección", "Estado", "Fecha"],
+    ["N\u00b0", "Alumno", "DNI", "Grado", "Seccion", "Estado", "Fecha"],
   ];
 
-  document.querySelectorAll("#tablaReporte tbody tr").forEach((tr) => {
+  document.querySelectorAll("#tablaR1 tbody tr").forEach((tr) => {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 7) {
       const fila = [];
@@ -218,10 +381,7 @@ function exportarExcel() {
   });
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws["!cols"] = [
-    { wch: 8 }, { wch: 35 }, { wch: 18 }, { wch: 22 },
-    { wch: 12 }, { wch: 18 }, { wch: 18 },
-  ];
+  ws["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 18 }, { wch: 18 }];
   ws["!merges"] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
@@ -232,12 +392,12 @@ function exportarExcel() {
   const blanco = "FFFFFF";
   const gris = "F5F7FA";
 
-  ws["A1"].s = { font: { bold: true, sz: 18, color: { rgb: blanco } }, fill: { fgColor: { rgb: azul } }, alignment: { horizontal: "center", vertical: "center" } };
+  ws["A1"].s = { font: { bold: true, sz: 18, color: { rgb: blanco } }, fill: { fgColor: { rgb: azul } }, alignment: { horizontal: "center" } };
   ws["A2"].s = { font: { bold: true, sz: 13 }, alignment: { horizontal: "center" } };
   ws["A3"].s = { font: { italic: true, sz: 11, color: { rgb: "666666" } }, alignment: { horizontal: "center" } };
 
   ["A5","B5","C5","D5","E5","F5","G5"].forEach((cell) => {
-    ws[cell].s = { font: { bold: true, color: { rgb: blanco } }, fill: { fgColor: { rgb: azul } }, alignment: { horizontal: "center", vertical: "center" }, border: { top: { style: "thin", color: { rgb: "D9D9D9" } }, bottom: { style: "thin", color: { rgb: "D9D9D9" } }, left: { style: "thin", color: { rgb: "D9D9D9" } }, right: { style: "thin", color: { rgb: "D9D9D9" } } } };
+    ws[cell].s = { font: { bold: true, color: { rgb: blanco } }, fill: { fgColor: { rgb: azul } }, alignment: { horizontal: "center" } };
   });
 
   for (let i = 6; i <= data.length; i++) {
@@ -245,14 +405,35 @@ function exportarExcel() {
     ["A","B","C","D","E","F","G"].forEach((col) => {
       const celda = col + i;
       if (ws[celda]) {
-        ws[celda].s = { fill: { fgColor: { rgb: colorFila } }, border: { top: { style: "thin", color: { rgb: "E5E7EB" } }, bottom: { style: "thin", color: { rgb: "E5E7EB" } }, left: { style: "thin", color: { rgb: "E5E7EB" } }, right: { style: "thin", color: { rgb: "E5E7EB" } } }, alignment: { vertical: "center", horizontal: col === "A" || col === "E" || col === "F" || col === "G" ? "center" : "left" } };
+        ws[celda].s = { fill: { fgColor: { rgb: colorFila } } };
       }
     });
   }
 
-  XLSX.utils.book_append_sheet(wb, ws, "Reporte Matrículas");
+  XLSX.utils.book_append_sheet(wb, ws, "Reporte Matriculas");
   XLSX.writeFile(wb, "Reporte_Matriculas_2026.xlsx");
   showSuccessAlert("Excel exportado correctamente.");
 }
 
-cargarReporte();
+// ==================== CARGAR TODO ====================
+cargarR1();
+
+// Lazy load por tab
+document.querySelectorAll('#reportesTab button[data-bs-toggle="tab"]').forEach(tab => {
+  tab.addEventListener("shown.bs.tab", function (e) {
+    const target = e.target.getAttribute("data-bs-target");
+    if (target === "#r2") cargarR2();
+    else if (target === "#r4") cargarR4();
+    else if (target === "#r5") cargarR5();
+    else if (target === "#r6") cargarR6();
+  });
+});
+
+// Set default date range (first day of current month to today)
+(function() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const fmt = d => d.toISOString().split("T")[0];
+  document.getElementById("r2Desde").value = fmt(first);
+  document.getElementById("r2Hasta").value = fmt(now);
+})();

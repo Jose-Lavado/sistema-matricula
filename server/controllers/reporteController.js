@@ -2,8 +2,11 @@
 // libreria: exceljs — Generación de reportes Excel (equivalente a Apache POI)
 // libreria: fs-extra — Escritura de archivos Excel (equivalente a Apache Commons IO)
 // reporteController.js — GET /reportes/matriculas (lista) y /reportes/stats (estadísticas)
+// reporteController.js — reportes del sistema de matrículas
 const Matricula = require("../models/Matricula");
+const Seccion = require("../models/Seccion");
 const Admin = require("../models/Admin");
+const pool = require("../config/db");
 const logger = require("../services/logger");
 const ExcelJS = require("exceljs");
 const fse = require("fs-extra");
@@ -22,7 +25,6 @@ const reporteController = {
     }
   },
 
-  // libreria: ExcelJS — Genera un archivo Excel descargable con el reporte de matrículas
   descargarExcel: async (req, res) => {
     try {
       const { periodo } = req.query;
@@ -68,11 +70,69 @@ const reporteController = {
 
   stats: async (req, res) => {
     try {
-      const stats = await Matricula.getStats();
+      const { periodo } = req.query;
+      const stats = await Matricula.getStats(periodo);
       return res.json(stats);
     } catch (err) {
       logger.error(err);
       return res.status(500).json({ message: "Error al obtener stats." });
+    }
+  },
+
+  productividad: async (req, res) => {
+    try {
+      const { periodo } = req.query;
+      const anio = periodo || new Date().getFullYear();
+      const [data, totalRow, adminCount] = await Promise.all([
+        Matricula.getProductividad(anio),
+        pool.query("SELECT COUNT(*) AS total FROM Matricula WHERE periodoAcademico = ? AND fechaEliminacion IS NULL", [anio]),
+        pool.query("SELECT COUNT(*) AS total FROM Usuario WHERE rol = 'ADMIN'")
+      ]);
+      const totalMatriculas = totalRow[0][0].total;
+      const totalAdmins = adminCount[0][0].total;
+      const productividad = totalAdmins > 0 ? (totalMatriculas / totalAdmins).toFixed(1) : 0;
+      return res.json({ data, totalMatriculas, totalAdmins, productividad: Number(productividad) });
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).json({ message: "Error al obtener productividad." });
+    }
+  },
+
+  eliminadas: async (req, res) => {
+    try {
+      const { periodo } = req.query;
+      const anio = periodo || new Date().getFullYear();
+      const data = await Matricula.getEliminadas(anio);
+      return res.json(data);
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).json({ message: "Error al obtener matrículas eliminadas." });
+    }
+  },
+
+  cumplimiento: async (req, res) => {
+    try {
+      const { periodo } = req.query;
+      const anio = periodo || new Date().getFullYear();
+      const data = await Matricula.getCumplimiento(anio);
+      const totalRealizadas = data.reduce((s, r) => s + Number(r.realizadas), 0);
+      const totalCapacidad = data.reduce((s, r) => s + Number(r.capacidad), 0);
+      const porcentajeGlobal = totalCapacidad > 0 ? (totalRealizadas / totalCapacidad * 100).toFixed(1) : 0;
+      return res.json({ data, totalRealizadas, totalCapacidad, porcentajeGlobal: Number(porcentajeGlobal) });
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).json({ message: "Error al obtener cumplimiento." });
+    }
+  },
+
+  vacantes: async (req, res) => {
+    try {
+      const secciones = await Seccion.findAll();
+      const totales = await Seccion.getTotales();
+      return res.json({ secciones, totales });
+    } catch (err) {
+      logger.error(err);
+      return res.status(500).json({ message: "Error al obtener vacantes." });
     }
   },
 };

@@ -57,7 +57,7 @@ class Seccion {
   async actualizarVacantes(cantidad) {
     const [[{ ocupadas }]] = await pool.query(
       `SELECT COALESCE(COUNT(*), 0) AS ocupadas FROM Matricula
-       WHERE idSeccion = ? AND periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA'`,
+       WHERE idSeccion = ? AND periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA' AND fechaEliminacion IS NULL`,
       [this.idSeccion]
     );
     if (cantidad < ocupadas) {
@@ -80,7 +80,7 @@ class Seccion {
       LEFT JOIN (
         SELECT idSeccion, COUNT(*) AS ocupadas
         FROM Matricula
-        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA'
+        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA' AND fechaEliminacion IS NULL
         GROUP BY idSeccion
       ) a ON s.idSeccion = a.idSeccion
       ORDER BY s.grado, s.seccion
@@ -109,7 +109,7 @@ class Seccion {
       LEFT JOIN (
         SELECT idSeccion, COUNT(*) AS ocupadas
         FROM Matricula
-        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA'
+        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA' AND fechaEliminacion IS NULL
         GROUP BY idSeccion
       ) a ON s.idSeccion = a.idSeccion
       GROUP BY s.grado
@@ -135,7 +135,7 @@ class Seccion {
       LEFT JOIN (
         SELECT idSeccion, COUNT(*) AS ocupadas
         FROM Matricula
-        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA'
+        WHERE periodoAcademico = YEAR(CURDATE()) AND estado = 'APROBADA' AND fechaEliminacion IS NULL
         GROUP BY idSeccion
       ) a ON s.idSeccion = a.idSeccion
     `);
