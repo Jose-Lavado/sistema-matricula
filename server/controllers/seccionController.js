@@ -52,7 +52,7 @@ const seccionController = {
       await seccion.actualizarVacantes(vacantes);
       return res.json({ message: "Vacantes actualizadas." });
     } catch (err) {
-      if (err.message && err.message.startsWith("El total no puede")) {
+      if (err.message && err.message.startsWith("La capacidad no puede")) {
         return res.status(400).json({ message: err.message });
       }
       logger.error(err);
