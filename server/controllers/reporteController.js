@@ -81,17 +81,53 @@ const reporteController = {
 
   productividad: async (req, res) => {
     try {
-      const { periodo } = req.query;
+      const { periodo, desde, hasta } = req.query;
       const anio = periodo || new Date().getFullYear();
+
+      let fechaMatriculaWhere = "";
+      const fechaMatParams = [];
+      if (desde && hasta) {
+        fechaMatriculaWhere = "AND m.fechaRegistro BETWEEN ? AND ?";
+        fechaMatParams.push(desde, hasta + " 23:59:59");
+      } else if (desde) {
+        fechaMatriculaWhere = "AND m.fechaRegistro >= ?";
+        fechaMatParams.push(desde);
+      } else if (hasta) {
+        fechaMatriculaWhere = "AND m.fechaRegistro <= ?";
+        fechaMatParams.push(hasta + " 23:59:59");
+      }
+
       const [data, totalRow, adminCount] = await Promise.all([
-        Matricula.getProductividad(anio),
-        pool.query("SELECT COUNT(*) AS total FROM Matricula WHERE periodoAcademico = ? AND fechaEliminacion IS NULL", [anio]),
+        Matricula.getProductividad(anio, desde, hasta),
+        pool.query(`SELECT COUNT(*) AS total FROM Matricula m WHERE m.periodoAcademico = ? AND m.fechaEliminacion IS NULL AND m.estado = 'APROBADA' ${fechaMatriculaWhere}`, [anio, ...fechaMatParams]),
         pool.query("SELECT COUNT(*) AS total FROM Usuario WHERE rol = 'ADMIN'")
       ]);
       const totalMatriculas = totalRow[0][0].total;
       const totalAdmins = adminCount[0][0].total;
-      const productividad = totalAdmins > 0 ? (totalMatriculas / totalAdmins).toFixed(1) : 0;
-      return res.json({ data, totalMatriculas, totalAdmins, productividad: Number(productividad) });
+
+      let maxAdmin = "-";
+      let maxTotal = 0;
+      let minAdmin = "-";
+      let minTotal = Infinity;
+      let sumaTotal = 0;
+      let sumaAprobadas = 0;
+      let adminsConDatos = 0;
+      if (data && data.length) {
+        data.forEach(r => {
+          const t = Number(r.total);
+          const a = Number(r.aprobadas);
+          if (t > maxTotal) { maxTotal = t; maxAdmin = r.admin; }
+          if (t < minTotal) { minTotal = t; minAdmin = r.admin; }
+          sumaTotal += t;
+          sumaAprobadas += a;
+          if (t > 0) adminsConDatos++;
+        });
+        if (minTotal === Infinity) minTotal = 0;
+      }
+      const promedioTotal = adminsConDatos > 0 ? Number((sumaTotal / adminsConDatos).toFixed(1)) : 0;
+      const promedioAprobadas = adminsConDatos > 0 ? Number((sumaAprobadas / adminsConDatos).toFixed(1)) : 0;
+
+      return res.json({ data, totalMatriculas, totalAdmins, maxAdmin, maxTotal, minAdmin, minTotal, promedioTotal, promedioAprobadas });
     } catch (err) {
       logger.error(err);
       return res.status(500).json({ message: "Error al obtener productividad." });
@@ -161,6 +197,8 @@ const reporteController = {
       return res.status(500).json({ message: "Error al obtener alumnos sin matrícula." });
     }
   },
+
+
 };
 
 module.exports = reporteController;

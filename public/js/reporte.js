@@ -65,17 +65,24 @@ async function cargarR1() {
 // ==================== REPORTE 2: Productividad del Personal ====================
 async function cargarR2() {
   const periodo = new Date().getFullYear();
+  const desde = document.getElementById("r2Desde")?.value || "";
+  const hasta = document.getElementById("r2Hasta")?.value || "";
   try {
-    const result = await apiFetch("/reportes/productividad?periodo=" + periodo);
+    const params = new URLSearchParams({ periodo });
+    if (desde) params.append("desde", desde);
+    if (hasta) params.append("hasta", hasta);
+    const result = await apiFetch("/reportes/productividad?" + params.toString());
     if (result) {
       document.getElementById("r2KpiTotal").textContent = result.totalMatriculas || 0;
       document.getElementById("r2KpiAdmins").textContent = result.totalAdmins || 0;
-      document.getElementById("r2KpiProductividad").textContent = result.productividad || 0;
-      document.getElementById("r2KpiPromedio").textContent = result.productividad || 0;
+      document.getElementById("r2KpiMax").textContent = result.maxTotal || 0;
+      document.getElementById("r2KpiMaxAdmin").textContent = result.maxAdmin || "";
+      document.getElementById("r2KpiMin").textContent = result.minTotal || 0;
+      document.getElementById("r2KpiMinAdmin").textContent = result.minAdmin || "";
 
       const tbody = document.getElementById("r2Body");
       if (result.data && result.data.length) {
-        tbody.innerHTML = result.data.map(r => {
+        const filas = result.data.map(r => {
           const total = Number(r.total);
           const aprobadas = Number(r.aprobadas);
           const pct = total > 0 ? ((aprobadas / total) * 100).toFixed(1) : 0;
@@ -94,7 +101,14 @@ async function cargarR2() {
               </div>
             </td>
           </tr>`;
-        }).join("");
+        });
+        filas.push(`<tr class="table-secondary fw-bold">
+          <td class="ps-4">PROMEDIO</td>
+          <td>${result.promedioTotal}</td>
+          <td class="text-success">${result.promedioAprobadas}</td>
+          <td colspan="3"></td>
+        </tr>`);
+        tbody.innerHTML = filas.join("");
       } else {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay datos de productividad</td></tr>';
       }
@@ -435,6 +449,327 @@ async function exportarPDF() {
   showSuccessAlert("PDF exportado correctamente.");
 }
 
+// ==================== HELPER: Header PDF ====================
+function buildPdfHeader(doc, titulo) {
+  var azul = [10, 22, 40];
+  try {
+    var logo = new Image();
+    logo.src = "/images/logo.png";
+    doc.addImage(logo, "PNG", 22, 8, 18, 18);
+  } catch (e) {}
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("I.E. PEDRO LABARTHE", 31, 28, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(100);
+  doc.text("Institucion Educativa Pedro Labarthe", 31, 32, { align: "center" });
+  doc.text("Sistema de Gestion de Matriculas", 31, 36, { align: "center" });
+
+  doc.setTextColor(40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text(titulo, 105, 16, { align: "center" });
+  doc.setFontSize(10);
+  doc.setTextColor(10, 22, 40);
+  var anio = new Date().getFullYear();
+  doc.text("Periodo Academico " + anio, 105, 25, { align: "center" });
+
+  var raw = sessionStorage.getItem("user") || localStorage.getItem("user");
+  var user = raw ? JSON.parse(raw) : {};
+  var fechaHoy = new Date();
+  var fechaStr = String(fechaHoy.getDate()).padStart(2, "0") + "/" + String(fechaHoy.getMonth() + 1).padStart(2, "0") + "/" + fechaHoy.getFullYear();
+  var bx = 153, by = 10, bw = 43, bh = 20;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(bx, by, bw, bh, 2, 2, "S");
+  doc.setFontSize(6);
+  var meta = [["Fecha: ", fechaStr], ["Generado por: ", user.name || "Admin"], ["Cargo: ", user.role || "Administrador"], ["Periodo: ", String(anio)]];
+  var my = by + 4.5;
+  meta.forEach(function (m) {
+    doc.setFont("helvetica", "bold"); doc.setTextColor(60); doc.text(m[0], bx + 3, my);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(100); doc.text(m[1], bx + 22, my);
+    my += 3.8;
+  });
+  doc.setDrawColor(180); doc.setLineWidth(0.4); doc.line(14, 40, 196, 40);
+  return 44;
+}
+
+function buildPdfFooter(doc) {
+  var paginas = doc.internal.getNumberOfPages();
+  for (var i = 1; i <= paginas; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text("Pagina " + i + " de " + paginas, 105, 290, { align: "center" });
+  }
+}
+
+// ==================== EXPORTAR PDF (Reporte 2: Productividad) ====================
+async function exportarPDF_R2() {
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF("p", "mm", "a4");
+  var azul = [10, 22, 40];
+  var gris = [245, 247, 251];
+  var startY = buildPdfHeader(doc, "Reporte de Productividad");
+
+  showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
+
+  var result = await apiFetch("/reportes/productividad?periodo=" + new Date().getFullYear()) || {};
+
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("1. RESUMEN GENERAL", 14, startY + 3);
+
+  var tblX = 14, tblW = 182, cellW = tblW / 4;
+  var hdrY = startY + 7, hdrH = 8, dataH = 10;
+
+  doc.setFillColor(...azul);
+  doc.rect(tblX, hdrY, tblW, hdrH, "F");
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  ["TOTAL MATRICULAS", "ADMINISTRADORS", "PROM. TOTAL", "PROM. APROBADAS"].forEach(function (label, i) {
+    doc.text(label, tblX + cellW * i + cellW / 2, hdrY + 5.5, { align: "center" });
+  });
+
+  var pastelBg = [[255, 255, 255], [219, 234, 254], [209, 231, 221], [255, 243, 205]];
+  var valores = [String(result.totalMatriculas || 0), String(result.totalAdmins || 0), String(result.promedioTotal || 0), String(result.promedioAprobadas || 0)];
+  var dataY = hdrY + hdrH;
+  valores.forEach(function (val, i) {
+    doc.setFillColor(...pastelBg[i]);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "F");
+    doc.setDrawColor(200); doc.setLineWidth(0.2);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "S");
+    doc.setTextColor(40); doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+    doc.text(val, tblX + cellW * i + cellW / 2, dataY + 7, { align: "center" });
+  });
+
+  var sec2Y = dataY + dataH + 8;
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("2. DETALLE POR ADMINISTRADOR", 14, sec2Y);
+
+  var filas = [];
+  document.querySelectorAll("#r2Body tr").forEach(function (tr) {
+    var tds = tr.querySelectorAll("td");
+    if (tds.length >= 5) {
+      filas.push(Array.from(tds).map(function (td) { return td.innerText.trim(); }));
+    }
+  });
+
+  doc.autoTable({
+    startY: sec2Y + 4,
+    head: [["Administrador", "Registradas", "Aprobadas", "Pendientes", "Rechazadas", "% Exito"]],
+    body: filas,
+    theme: "grid",
+    headStyles: { fillColor: azul, textColor: 255, halign: "center", fontStyle: "bold", fontSize: 8.5 },
+    styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: 40 },
+    alternateRowStyles: { fillColor: gris },
+  });
+
+  buildPdfFooter(doc);
+  doc.save("Reporte_Productividad_" + new Date().getFullYear() + ".pdf");
+  document.querySelectorAll(".notif-stack .notif").forEach(function (d) {
+    if (typeof removeNotification === "function") removeNotification(d); else d.remove();
+  });
+  showSuccessAlert("PDF exportado correctamente.");
+}
+
+// ==================== EXPORTAR PDF (Reporte 4: Eliminadas) ====================
+async function exportarPDF_R4() {
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF("p", "mm", "a4");
+  var azul = [10, 22, 40];
+  var gris = [245, 247, 251];
+  var startY = buildPdfHeader(doc, "Reporte de Eliminadas");
+
+  showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
+
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("MATRICULAS ELIMINADAS", 14, startY + 3);
+
+  var filas = [];
+  document.querySelectorAll("#r4Body tr").forEach(function (tr) {
+    var tds = tr.querySelectorAll("td");
+    if (tds.length >= 6) {
+      filas.push(Array.from(tds).map(function (td) { return td.innerText.trim(); }));
+    }
+  });
+
+  doc.autoTable({
+    startY: startY + 7,
+    head: [["ID", "Alumno", "Estado Anterior", "Fecha Registro", "Fecha Eliminacion", "Eliminado Por"]],
+    body: filas,
+    theme: "grid",
+    headStyles: { fillColor: azul, textColor: 255, halign: "center", fontStyle: "bold", fontSize: 8.5 },
+    styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: 40 },
+    alternateRowStyles: { fillColor: gris },
+  });
+
+  buildPdfFooter(doc);
+  doc.save("Reporte_Eliminadas_" + new Date().getFullYear() + ".pdf");
+  document.querySelectorAll(".notif-stack .notif").forEach(function (d) {
+    if (typeof removeNotification === "function") removeNotification(d); else d.remove();
+  });
+  showSuccessAlert("PDF exportado correctamente.");
+}
+
+// ==================== EXPORTAR PDF (Reporte 5: Cumplimiento) ====================
+async function exportarPDF_R5() {
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF("p", "mm", "a4");
+  var azul = [10, 22, 40];
+  var gris = [245, 247, 251];
+  var startY = buildPdfHeader(doc, "Reporte de Cumplimiento");
+
+  showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
+
+  var result = await apiFetch("/reportes/cumplimiento?periodo=" + new Date().getFullYear()) || {};
+
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("1. RESUMEN GLOBAL", 14, startY + 3);
+
+  var tblX = 14, tblW = 182, cellW = tblW / 3;
+  var hdrY = startY + 7, hdrH = 8, dataH = 10;
+
+  doc.setFillColor(...azul);
+  doc.rect(tblX, hdrY, tblW, hdrH, "F");
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  ["REALIZADAS", "CAPACIDAD TOTAL", "% CUMPLIMIENTO"].forEach(function (label, i) {
+    doc.text(label, tblX + cellW * i + cellW / 2, hdrY + 5.5, { align: "center" });
+  });
+
+  var pastelBg = [[209, 231, 221], [219, 234, 254], [255, 243, 205]];
+  var valores = [String(result.totalRealizadas || 0), String(result.totalCapacidad || 0), (result.porcentajeGlobal || 0) + "%"];
+  var dataY = hdrY + hdrH;
+  valores.forEach(function (val, i) {
+    doc.setFillColor(...pastelBg[i]);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "F");
+    doc.setDrawColor(200); doc.setLineWidth(0.2);
+    doc.rect(tblX + cellW * i, dataY, cellW, dataH, "S");
+    doc.setTextColor(40); doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+    doc.text(val, tblX + cellW * i + cellW / 2, dataY + 7, { align: "center" });
+  });
+
+  var sec2Y = dataY + dataH + 8;
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("2. CUMPLIMIENTO POR GRADO", 14, sec2Y);
+
+  var filas = [];
+  document.querySelectorAll("#r5Body tr").forEach(function (tr) {
+    var tds = tr.querySelectorAll("td");
+    if (tds.length >= 5) {
+      filas.push(Array.from(tds).map(function (td) { return td.innerText.trim(); }));
+    }
+  });
+
+  doc.autoTable({
+    startY: sec2Y + 4,
+    head: [["Grado", "Realizadas", "Capacidad", "% Cumplimiento", "Observacion"]],
+    body: filas,
+    theme: "grid",
+    headStyles: { fillColor: azul, textColor: 255, halign: "center", fontStyle: "bold", fontSize: 8.5 },
+    styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: 40 },
+    alternateRowStyles: { fillColor: gris },
+  });
+
+  buildPdfFooter(doc);
+  doc.save("Reporte_Cumplimiento_" + new Date().getFullYear() + ".pdf");
+  document.querySelectorAll(".notif-stack .notif").forEach(function (d) {
+    if (typeof removeNotification === "function") removeNotification(d); else d.remove();
+  });
+  showSuccessAlert("PDF exportado correctamente.");
+}
+
+// ==================== EXPORTAR PDF (Reporte 6: Vacantes) ====================
+async function exportarPDF_R6() {
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF("p", "mm", "a4");
+  var azul = [10, 22, 40];
+  var gris = [245, 247, 251];
+  var startY = buildPdfHeader(doc, "Reporte de Vacantes");
+
+  showNotification("loading", "Exportando PDF...", "Generando el documento.", 0);
+
+  var data = await apiFetch("/reportes/vacantes") || {};
+
+  doc.setTextColor(10, 22, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("1. RESUMEN DE VACANTES", 14, startY + 3);
+
+  if (data.totales) {
+    var t = data.totales;
+    var tblX = 14, tblW = 182, cellW = tblW / 4;
+    var hdrY = startY + 7, hdrH = 8, dataH = 10;
+
+    doc.setFillColor(...azul);
+    doc.rect(tblX, hdrY, tblW, hdrH, "F");
+    doc.setTextColor(255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    ["CAPACIDAD TOTAL", "DISPONIBLES", "OCUPADAS", "% OCUPACION"].forEach(function (label, i) {
+      doc.text(label, tblX + cellW * i + cellW / 2, hdrY + 5.5, { align: "center" });
+    });
+
+    var ocupPct = t.total_vacantes > 0 ? ((t.ocupadas / t.total_vacantes) * 100).toFixed(1) : 0;
+    var pastelBg = [[255, 255, 255], [209, 231, 221], [219, 234, 254], [255, 243, 205]];
+    var valores = [String(t.total_vacantes || 0), String(t.disponibles || 0), String(t.ocupadas || 0), ocupPct + "%"];
+    var dataY = hdrY + hdrH;
+    valores.forEach(function (val, i) {
+      doc.setFillColor(...pastelBg[i]);
+      doc.rect(tblX + cellW * i, dataY, cellW, dataH, "F");
+      doc.setDrawColor(200); doc.setLineWidth(0.2);
+      doc.rect(tblX + cellW * i, dataY, cellW, dataH, "S");
+      doc.setTextColor(40); doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+      doc.text(val, tblX + cellW * i + cellW / 2, dataY + 7, { align: "center" });
+    });
+
+    var sec2Y = dataY + dataH + 8;
+    doc.setTextColor(10, 22, 40);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("2. DETALLE POR SECCION", 14, sec2Y);
+
+    var filas = [];
+    document.querySelectorAll("#r6Body tr").forEach(function (tr) {
+      var tds = tr.querySelectorAll("td");
+      if (tds.length >= 6) {
+        filas.push(Array.from(tds).map(function (td) { return td.innerText.trim(); }));
+      }
+    });
+
+    doc.autoTable({
+      startY: sec2Y + 4,
+      head: [["Grado", "Seccion", "Capacidad", "Disponibles", "Ocupadas", "% Ocupacion"]],
+      body: filas,
+      theme: "grid",
+      headStyles: { fillColor: azul, textColor: 255, halign: "center", fontStyle: "bold", fontSize: 8.5 },
+      styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: 40 },
+      alternateRowStyles: { fillColor: gris },
+    });
+  }
+
+  buildPdfFooter(doc);
+  doc.save("Reporte_Vacantes_" + new Date().getFullYear() + ".pdf");
+  document.querySelectorAll(".notif-stack .notif").forEach(function (d) {
+    if (typeof removeNotification === "function") removeNotification(d); else d.remove();
+  });
+  showSuccessAlert("PDF exportado correctamente.");
+}
+
 // ==================== EXPORTAR EXCEL (Reporte 1) ====================
 function exportarExcel() {
   const wb = XLSX.utils.book_new();
@@ -513,6 +848,10 @@ document.querySelectorAll('#reportesTab button[data-bs-toggle="tab"]').forEach(t
     else if (target === "#r6") cargarR6();
   });
 });
+
+// Event listeners para filtros de fecha del Reporte 2
+document.getElementById("r2Desde")?.addEventListener("change", cargarR2);
+document.getElementById("r2Hasta")?.addEventListener("change", cargarR2);
 
 // Set default date range (first day of current month to today)
 (function() {

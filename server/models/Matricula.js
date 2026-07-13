@@ -297,7 +297,20 @@ class Matricula {
     return rows;
   }
 
-  static async getProductividad(periodo) {
+  static async getProductividad(periodo, fechaDesde, fechaHasta) {
+    const params = [];
+    let fechaWhere = "";
+    if (fechaDesde && fechaHasta) {
+      fechaWhere = "AND hc.fechaCambio BETWEEN ? AND ?";
+      params.push(fechaDesde, fechaHasta + " 23:59:59");
+    } else if (fechaDesde) {
+      fechaWhere = "AND hc.fechaCambio >= ?";
+      params.push(fechaDesde);
+    } else if (fechaHasta) {
+      fechaWhere = "AND hc.fechaCambio <= ?";
+      params.push(fechaHasta + " 23:59:59");
+    }
+    params.push(periodo);
     const [rows] = await pool.query(`
       SELECT u.idUsuario,
              CONCAT(u.nombre, ' ', u.apellido) AS admin,
@@ -307,13 +320,14 @@ class Matricula {
              COUNT(DISTINCT CASE WHEN m.estado = 'RECHAZADA' THEN hc.idMatricula END) AS rechazadas
       FROM Usuario u
       LEFT JOIN Historial_Cambios hc ON hc.idUsuario = u.idUsuario
+        ${fechaWhere}
       LEFT JOIN Matricula m ON m.idMatricula = hc.idMatricula
         AND m.periodoAcademico = ?
         AND m.fechaEliminacion IS NULL
       WHERE u.rol = 'ADMIN'
       GROUP BY u.idUsuario
       ORDER BY total DESC
-    `, [periodo]);
+    `, params);
     return rows;
   }
 
@@ -341,6 +355,8 @@ class Matricula {
     `, [periodo]);
     return rows;
   }
+
+
 }
 
 module.exports = Matricula;

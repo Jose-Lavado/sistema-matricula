@@ -24,4 +24,5 @@ router.get("/vacantes", verifyToken, verifyRole("Administrador"), reporteControl
 router.get("/sin-matricula", verifyToken, verifyRole("Administrador"), reporteController.sinMatricula);
 router.get("/descargar-excel", verifyToken, verifyRole("Administrador"), reporteController.descargarExcel);
 
+
 module.exports = router;
