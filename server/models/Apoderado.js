@@ -154,7 +154,7 @@ class Apoderado extends Usuario {
     const [rows] = await pool.query(
       `SELECT a.*, m.idMatricula, m.estado, m.fechaRegistro, s.grado, s.seccion
        FROM Alumno a
-       INNER JOIN Matricula m ON a.idAlumno = m.idAlumno AND m.periodoAcademico = YEAR(CURDATE())
+       LEFT JOIN Matricula m ON a.idAlumno = m.idAlumno AND m.periodoAcademico = YEAR(CURDATE())
        LEFT JOIN Seccion s ON m.idSeccion = s.idSeccion
        WHERE a.idApoderado = ?
        ORDER BY a.nombre`, [idApoderado]
